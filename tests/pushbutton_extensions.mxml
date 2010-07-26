@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<mx:Application name="error_test"
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	layout="absolute"
+	applicationComplete="appComplete();"
+	backgroundColor="white">
+
+<mx:Script>
+<![CDATA[
+	import flash.utils.getDefinitionByName;
+	
+	private function appComplete():void {
+		try {
+			var lightspark:* = new(getDefinitionByName("com.pblabs.engine.core::Lightspark"));
+			trace(lightspark.toString());
+		}
+		catch(e:Error) {
+			trace("Not found");
+		}
+	}
+]]>
+</mx:Script>
+
+</mx:Application>

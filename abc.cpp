@@ -254,6 +254,10 @@ void ABCVm::registerClasses()
 	Global.setVariableByQName("ContextMenuItem","flash.ui",Class<ASObject>::getClass("ContextMenuItem"));
 
 	Global.setVariableByQName("isNaN","",Class<IFunction>::getFunction(isNaN));
+
+#ifdef PUSHBUTTON_EXTENSIONS
+	Global.setVariableByQName("Lightspark","com.pblabs.engine.core",Class<ASObject>::getClass("Lightspark"));
+#endif
 }
 
 //This function is used at compile time
