@@ -17,14 +17,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
 
-#include "swf.h"
-#include "tags.h"
-#include "actions.h"
-#include "frame.h"
-#include "geometry.h"
-#include "logger.h"
-#include "streams.h"
-#include "netutils.h"
 #include <time.h>
 #ifndef WIN32
 #include <sys/resource.h>
@@ -39,21 +31,11 @@
 #include <SDL.h>
 
 using namespace std;
-using namespace lightspark;
-
-TLSDATA DLL_PUBLIC SystemState* sys;
-TLSDATA DLL_PUBLIC RenderThread* rt=NULL;
-TLSDATA DLL_PUBLIC ParseThread* pt=NULL;
 
 int main(int argc, char* argv[])
 {
-	char* fileName=NULL;
-	char* url=NULL;
-	char* paramsFileName=NULL;
-	bool useInterpreter=true;
-	bool useJit=false;
-	LOG_LEVEL log_level=LOG_NOT_IMPLEMENTED;
-
+	lightspark_system_state lightspark_state;
+	
 	for(int i=1;i<argc;i++)
 	{
 		if(strcmp(argv[i],"-u")==0 || 
@@ -62,7 +44,7 @@ int main(int argc, char* argv[])
 			i++;
 			if(i==argc)
 			{
-				fileName=NULL;
+				lightspark_state.filename=NULL;
 				break;
 			}
 
@@ -71,12 +53,12 @@ int main(int argc, char* argv[])
 		else if(strcmp(argv[i],"-ni")==0 || 
 			strcmp(argv[i],"--disable-interpreter")==0)
 		{
-			useInterpreter=false;
+			lightspark_state.useInterpreter=false;
 		}
 		else if(strcmp(argv[i],"-j")==0 || 
 			strcmp(argv[i],"--enable-jit")==0)
 		{
-			useJit=true;
+			lightspark_state.useJit=true;
 		}
 		else if(strcmp(argv[i],"-l")==0 || 
 			strcmp(argv[i],"--log-level")==0)
@@ -84,11 +66,11 @@ int main(int argc, char* argv[])
 			i++;
 			if(i==argc)
 			{
-				fileName=NULL;
+				lightspark_state.filename=NULL;
 				break;
 			}
 
-			log_level=(LOG_LEVEL)atoi(argv[i]);
+			lightspark_state.log_level=atoi(argv[i]);
 		}
 		else if(strcmp(argv[i],"-p")==0 || 
 			strcmp(argv[i],"--parameters-file")==0)
@@ -96,25 +78,25 @@ int main(int argc, char* argv[])
 			i++;
 			if(i==argc)
 			{
-				fileName=NULL;
+				lightspark_state.filename=NULL;
 				break;
 			}
-			paramsFileName=argv[i];
+			lightspark_state.paramsFileName=argv[i];
 		}
 		else
 		{
 			//No options flag, so set the swf file name
-			if(fileName) //If already set, exit in error status
+			if(lightspark_state.filename) //If already set, exit in error status
 			{
-				fileName=NULL;
+				lightspark_state.filename=NULL;
 				break;
 			}
-			fileName=argv[i];
+			lightspark_state.filename=argv[i];
 		}
 	}
 
 
-	if(fileName==NULL)
+	if(lightspark_state.filename==NULL)
 	{
 		cout << "Usage: " << argv[0] << " [--url|-u http://loader.url/file.swf] [--disable-interpreter|-ni] [--enable-jit|-j] [--log-level|-l 0-4] [--parameters-file|-p params-file] <file.swf>" << endl;
 		exit(-1);
@@ -128,45 +110,19 @@ int main(int argc, char* argv[])
 	//setrlimit(RLIMIT_AS,&rl);
 
 #endif
-
-	Log::initLogging(log_level);
-	zlib_file_filter zf(fileName);
-	istream f(&zf);
-	f.exceptions ( istream::eofbit | istream::failbit | istream::badbit );
-	cout.exceptions( ios::failbit | ios::badbit);
-	cerr.exceptions( ios::failbit | ios::badbit);
-	ParseThread* pt = new ParseThread(NULL,f);
-	//NOTE: see SystemState declaration
-	sys=new SystemState(pt);
-
-	//Set a bit of SystemState using parameters
-	if(url)
-		sys->setUrl(url);
-
-	//One of useInterpreter or useJit must be enabled
-	if(!(useInterpreter || useJit))
-	{
-		LOG(LOG_ERROR,"No execution model enabled");
-		exit(-1);
-	}
-	sys->useInterpreter=useInterpreter;
-	sys->useJit=useJit;
-	if(paramsFileName)
-		sys->parseParametersFromFile(paramsFileName);
-
-	sys->setOrigin(fileName);
 	
 	SDL_Init ( SDL_INIT_VIDEO |SDL_INIT_EVENTTHREAD );
-	sys->setParamsAndEngine(SDL, NULL);
-	sys->downloadManager=new CurlDownloadManager();
-	//Start the parser
-	sys->addJob(pt);
 
-	sys->wait();
-	pt->wait();
-	delete sys;
-	delete pt;
-
+	//Init
+	init_lightspark(&lightspark_state)
+	
+	//Run
+	//TODO Tick-based running?
+	run_lightspark(&lightspark_state);
+	
+	//Cleanup
+	destroy_lightspark(&lightspark_state);
+	
 	SDL_Quit();
 	return 0;
 }

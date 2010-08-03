@@ -118,6 +118,10 @@ void init_lightspark(lightspark_system_state* lightspark_state)
 	//TODO : add something for SDL
 	sys->setParamsAndEngine(SDL, NULL);
 	sys->downloadManager=new CurlDownloadManager();
+}
+
+void run_lightspark(lightspark_system_state* lightspark_state)
+{
 	//Start the parser
 	sys->addJob(pt);
 
