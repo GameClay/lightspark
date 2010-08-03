@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 				break;
 			}
 
-			url=argv[i];
+			lightspark_state.url=argv[i];
 		}
 		else if(strcmp(argv[i],"-ni")==0 || 
 			strcmp(argv[i],"--disable-interpreter")==0)
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 	SDL_Init ( SDL_INIT_VIDEO |SDL_INIT_EVENTTHREAD );
 
 	//Init
-	init_lightspark(&lightspark_state)
+	init_lightspark(&lightspark_state);
 	
 	//Run
 	//TODO Tick-based running?
