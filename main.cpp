@@ -57,6 +57,11 @@ int main(int argc, char* argv[])
 	lightspark_api_func* lightspark_system_state_defaults = (lightspark_api_func*)dlsym(liblightspark, "lightspark_system_state_defaults");
 	
 	//Check for successful load
+	const char* dlsym_error = dlerror();
+    if (dlsym_error) {
+        cerr << "Cannot load symbol create: " << dlsym_error << '\n';
+        return 1;
+    }
 	
 	//Initialize state structure
 	lightspark_system_state_defaults(&lightspark_state);
