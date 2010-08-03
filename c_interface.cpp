@@ -23,6 +23,7 @@
 #include <sys/resource.h>
 #include "compat.h"
 #include "streams.h"
+#include "c_interface.h"
 
 using namespace std;
 using namespace lightspark;
@@ -36,20 +37,6 @@ extern int count_alloc;
 
 extern "C"
 {
-
-struct lightspark_system_state
-{
-	int log_level;
-	char* filename;
-	char* url;
-	char* paramsFileName;
-	int useInterpreter;
-	int useJit;
-	void* abcVm;
-	void* context_istream;
-	void* context;
-	void* zlibfilter;
-};
 
 void lightspark_system_state_defaults(lightspark_system_state* lightspark_state)
 {

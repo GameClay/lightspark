@@ -30,6 +30,8 @@
 #endif
 #include <SDL.h>
 
+#include "c_interface.h"
+
 using namespace std;
 
 int main(int argc, char* argv[])
