@@ -24,6 +24,7 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <dlfcn.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -38,6 +39,29 @@ int main(int argc, char* argv[])
 {
 	lightspark_system_state lightspark_state;
 	
+	//Load liblightspark
+	const char* liblightsparkname = "../lib/liblightspark.so";
+	void* liblightspark = dlopen(liblightsparkname, RTLD_NOW);
+	if(!liblightspark)
+	{
+		cerr << "Unable to load: " << liblightsparkname << endl;
+		exit(-1);
+	}
+	
+	dlerror(); //Reset error state
+	
+	//Get functions
+	lightspark_api_func* init_lightspark = (lightspark_api_func*)dlsym(liblightspark, "init_lightspark");
+	lightspark_api_func* run_lightspark = (lightspark_api_func*)dlsym(liblightspark, "run_lightspark");
+	lightspark_api_func* destroy_lightspark = (lightspark_api_func*)dlsym(liblightspark, "destroy_lightspark");
+	lightspark_api_func* lightspark_system_state_defaults = (lightspark_api_func*)dlsym(liblightspark, "lightspark_system_state_defaults");
+	
+	//Check for successful load
+	
+	//Initialize state structure
+	lightspark_system_state_defaults(&lightspark_state);
+
+	//Parse args
 	for(int i=1;i<argc;i++)
 	{
 		if(strcmp(argv[i],"-u")==0 || 
@@ -114,7 +138,7 @@ int main(int argc, char* argv[])
 #endif
 	
 	SDL_Init ( SDL_INIT_VIDEO |SDL_INIT_EVENTTHREAD );
-
+	
 	//Init
 	init_lightspark(&lightspark_state);
 	
@@ -126,6 +150,8 @@ int main(int argc, char* argv[])
 	destroy_lightspark(&lightspark_state);
 	
 	SDL_Quit();
+	dlclose(liblightspark);
+	
 	return 0;
 }
 

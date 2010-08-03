@@ -37,6 +37,8 @@ struct lightspark_system_state
 	void* zlibfilter;
 };
 
+typedef void lightspark_api_func(lightspark_system_state*);
+
 void lightspark_system_state_defaults(lightspark_system_state* lightspark_state);
 void init_lightspark(lightspark_system_state* lightspark_state);
 void run_lightspark(lightspark_system_state* lightspark_state);
