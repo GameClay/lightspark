@@ -24,7 +24,6 @@
 #include "compat.h"
 #include "streams.h"
 #include "c_interface.h"
-
 using namespace std;
 using namespace lightspark;
 
