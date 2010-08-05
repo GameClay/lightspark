@@ -35,6 +35,8 @@
 
 using namespace std;
 
+#define DL_ERROR_CHECK { const char* dlsym_error = dlerror(); if (dlsym_error) { cerr << "Cannot load symbol create: " << dlsym_error << endl; exit(-1); } dlerror(); }
+
 int main(int argc, char* argv[])
 {
 	lightspark_system_state lightspark_state;
@@ -52,16 +54,13 @@ int main(int argc, char* argv[])
 	
 	//Get functions
 	lightspark_api_func* init_lightspark = (lightspark_api_func*)dlsym(liblightspark, "init_lightspark");
+	DL_ERROR_CHECK
 	lightspark_api_func* run_lightspark = (lightspark_api_func*)dlsym(liblightspark, "run_lightspark");
+	DL_ERROR_CHECK
 	lightspark_api_func* destroy_lightspark = (lightspark_api_func*)dlsym(liblightspark, "destroy_lightspark");
+	DL_ERROR_CHECK
 	lightspark_api_func* lightspark_system_state_defaults = (lightspark_api_func*)dlsym(liblightspark, "lightspark_system_state_defaults");
-	
-	//Check for successful load
-	const char* dlsym_error = dlerror();
-    if (dlsym_error) {
-        cerr << "Cannot load symbol create: " << dlsym_error << '\n';
-        return 1;
-    }
+	DL_ERROR_CHECK
 	
 	//Initialize state structure
 	lightspark_system_state_defaults(&lightspark_state);

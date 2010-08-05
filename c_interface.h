@@ -22,9 +22,6 @@
 
 #include "compat.h"
 
-extern "C"
-{
-
 struct lightspark_system_state
 {
 	int log_level;
@@ -39,13 +36,19 @@ struct lightspark_system_state
 	void* zlibfilter;
 };
 
-typedef void lightspark_api_func(lightspark_system_state*) DLL_PUBLIC;
+typedef void lightspark_api_func(lightspark_system_state*);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void lightspark_system_state_defaults(lightspark_system_state* lightspark_state) DLL_PUBLIC;
 void init_lightspark(lightspark_system_state* lightspark_state) DLL_PUBLIC;
 void run_lightspark(lightspark_system_state* lightspark_state) DLL_PUBLIC;
 void destroy_lightspark(lightspark_system_state* lightspark_state) DLL_PUBLIC;
 
-} //extern "C"
+#ifdef __cplusplus
+}
+#endif
 
 #endif

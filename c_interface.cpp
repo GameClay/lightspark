@@ -34,9 +34,6 @@ TLSDATA DLL_PUBLIC ParseThread* pt=NULL;
 extern int count_reuse;
 extern int count_alloc;
 
-extern "C"
-{
-
 void lightspark_system_state_defaults(lightspark_system_state* lightspark_state)
 {
 	lightspark_state->log_level = LOG_NOT_IMPLEMENTED;
@@ -123,5 +120,3 @@ void destroy_lightspark(lightspark_system_state* lightspark_state)
 	if(sys) delete sys; sys = NULL; //Correct?
 	if(pt) delete pt; pt = NULL;
 }
-
-} // extern "C"
