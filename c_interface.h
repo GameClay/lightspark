@@ -36,7 +36,7 @@ struct lightspark_system_state
 	void* zlibfilter;
 };
 
-typedef void lightspark_api_func(lightspark_system_state*);
+typedef void (*lightspark_api_func)(lightspark_system_state*);
 
 #ifdef __cplusplus
 extern "C" {

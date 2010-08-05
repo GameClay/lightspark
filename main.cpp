@@ -53,13 +53,13 @@ int main(int argc, char* argv[])
 	dlerror(); //Reset error state
 	
 	//Get functions
-	lightspark_api_func* init_lightspark = (lightspark_api_func*)dlsym(liblightspark, "init_lightspark");
+	lightspark_api_func init_lightspark = (lightspark_api_func)dlsym(liblightspark, "init_lightspark");
 	DL_ERROR_CHECK
-	lightspark_api_func* run_lightspark = (lightspark_api_func*)dlsym(liblightspark, "run_lightspark");
+	lightspark_api_func run_lightspark = (lightspark_api_func)dlsym(liblightspark, "run_lightspark");
 	DL_ERROR_CHECK
-	lightspark_api_func* destroy_lightspark = (lightspark_api_func*)dlsym(liblightspark, "destroy_lightspark");
+	lightspark_api_func destroy_lightspark = (lightspark_api_func)dlsym(liblightspark, "destroy_lightspark");
 	DL_ERROR_CHECK
-	lightspark_api_func* lightspark_system_state_defaults = (lightspark_api_func*)dlsym(liblightspark, "lightspark_system_state_defaults");
+	lightspark_api_func lightspark_system_state_defaults = (lightspark_api_func)dlsym(liblightspark, "lightspark_system_state_defaults");
 	DL_ERROR_CHECK
 	
 	//Initialize state structure
