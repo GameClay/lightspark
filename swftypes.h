@@ -34,7 +34,6 @@
 #include <assert.h>
 #include "exceptions.h"
 #include <arpa/inet.h>
-#include <stdatomic.h>
 
 namespace lightspark
 {
@@ -477,7 +476,7 @@ protected:
 	virtual ~ASObject();
 	SWFOBJECT_TYPE type;
 private:
-	std::atomic<int32_t> ref_count;
+	int32_t ref_count;
 	Manager* manager;
 	int cur_level;
 	virtual int _maxlevel();
@@ -503,14 +502,14 @@ public:
 	void incRef()
 	{
 		//std::cout << "incref " << this << std::endl;
-		ref_count.fetch_add(1);
+		ref_count++; //TODO: Re-atomicize
 		assert(ref_count>0);
 	}
 	void decRef()
 	{
 		//std::cout << "decref " << this << std::endl;
 		assert_and_throw(ref_count>0);
-		ref_count.fetch_sub(1);
+		ref_count--; //TODO: Re-atomicize
 		if(ref_count==0)
 		{
 			if(manager)
@@ -528,7 +527,7 @@ public:
 	}
 	void fake_decRef()
 	{
-		ref_count.fetch_sub(1);
+		ref_count--; //TODO: Re-atomicize
 	}
 	static void s_incRef(ASObject* o)
 	{
