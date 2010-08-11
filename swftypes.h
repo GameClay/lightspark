@@ -34,7 +34,7 @@
 #include <assert.h>
 #include "exceptions.h"
 #include <arpa/inet.h>
-#include <stdatomic.h>
+#include "atomic.h"
 
 namespace lightspark
 {
@@ -477,7 +477,7 @@ protected:
 	virtual ~ASObject();
 	SWFOBJECT_TYPE type;
 private:
-	std::atomic<int32_t> ref_count;
+	int32_t ref_count;
 	Manager* manager;
 	int cur_level;
 	virtual int _maxlevel();
@@ -489,7 +489,7 @@ public:
 #ifndef NDEBUG
 	//Stuff only used in debugging
 	bool initialized;
-	int getRefCount(){ return ref_count; }
+	int getRefCount(){ return ref_count; } //TODO: 'ref_count' not assured to be aligned
 #endif
 	bool implEnable;
 	void setPrototype(Class_base* c);
@@ -503,15 +503,15 @@ public:
 	void incRef()
 	{
 		//std::cout << "incref " << this << std::endl;
-		ref_count.fetch_add(1);
+		ls_fetch_and_add(ref_count, 1);
 		assert(ref_count>0);
 	}
 	void decRef()
 	{
 		//std::cout << "decref " << this << std::endl;
 		assert_and_throw(ref_count>0);
-		ref_count.fetch_sub(1);
-		if(ref_count==0)
+		ls_fetch_and_add(ref_count, -1);
+		if(ref_count==0) //TODO: 'ref_count' not assured to be aligned
 		{
 			if(manager)
 			{
@@ -528,7 +528,7 @@ public:
 	}
 	void fake_decRef()
 	{
-		ref_count.fetch_sub(1);
+		ls_fetch_and_add(ref_count, -1);
 	}
 	static void s_incRef(ASObject* o)
 	{

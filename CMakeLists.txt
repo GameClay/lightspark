@@ -166,7 +166,7 @@ IF(ENABLE_CURL)
 ENDIF(ENABLE_CURL)
 
 # Compiler defaults flags for different profiles
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wnon-virtual-dtor -Woverloaded-virtual -pipe -fvisibility=hidden -fvisibility-inlines-hidden -std=c++0x")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wnon-virtual-dtor -Woverloaded-virtual -pipe -fvisibility=hidden -fvisibility-inlines-hidden")
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DEXPENSIVE_DEBUG")
 SET(CMAKE_CXX_FLAGS_PROFILE "-g -pg -O2")
