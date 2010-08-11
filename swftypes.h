@@ -502,14 +502,14 @@ public:
 	void incRef()
 	{
 		//std::cout << "incref " << this << std::endl;
-		ref_count++; //TODO: Re-atomicize
+		__sync_fetch_and_add(&ref_count, 1); //TODO: Change to non-GCC specific functions
 		assert(ref_count>0);
 	}
 	void decRef()
 	{
 		//std::cout << "decref " << this << std::endl;
 		assert_and_throw(ref_count>0);
-		ref_count--; //TODO: Re-atomicize
+		__sync_fetch_and_sub(&ref_count, 1); //TODO: Change to non-GCC specific functions
 		if(ref_count==0)
 		{
 			if(manager)
@@ -527,7 +527,7 @@ public:
 	}
 	void fake_decRef()
 	{
-		ref_count--; //TODO: Re-atomicize
+		__sync_fetch_and_sub(&ref_count, 1); //TODO: Change to non-GCC specific functions
 	}
 	static void s_incRef(ASObject* o)
 	{
