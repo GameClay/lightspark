@@ -34,6 +34,7 @@
 #include <assert.h>
 #include "exceptions.h"
 #include <arpa/inet.h>
+#include "atomic.h"
 
 namespace lightspark
 {
@@ -488,7 +489,7 @@ public:
 #ifndef NDEBUG
 	//Stuff only used in debugging
 	bool initialized;
-	int getRefCount(){ return ref_count; }
+	int getRefCount(){ return ref_count; } //TODO: 'ref_count' not assured to be aligned
 #endif
 	bool implEnable;
 	void setPrototype(Class_base* c);
@@ -502,15 +503,15 @@ public:
 	void incRef()
 	{
 		//std::cout << "incref " << this << std::endl;
-		__sync_fetch_and_add(&ref_count, 1); //TODO: Change to non-GCC specific functions
+		ls_fetch_and_add(ref_count, 1);
 		assert(ref_count>0);
 	}
 	void decRef()
 	{
 		//std::cout << "decref " << this << std::endl;
 		assert_and_throw(ref_count>0);
-		__sync_fetch_and_sub(&ref_count, 1); //TODO: Change to non-GCC specific functions
-		if(ref_count==0)
+		ls_fetch_and_add(ref_count, -1);
+		if(ref_count==0) //TODO: 'ref_count' not assured to be aligned
 		{
 			if(manager)
 			{
@@ -527,7 +528,7 @@ public:
 	}
 	void fake_decRef()
 	{
-		__sync_fetch_and_sub(&ref_count, 1); //TODO: Change to non-GCC specific functions
+		ls_fetch_and_add(ref_count, -1);
 	}
 	static void s_incRef(ASObject* o)
 	{
