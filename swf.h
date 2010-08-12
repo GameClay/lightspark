@@ -27,24 +27,20 @@
 #include <map>
 #include <semaphore.h>
 #include <string>
-#include <FTGL/ftgl.h>
 #include "swftypes.h"
 #include "frame.h"
-#include "vm.h"
-#include "flashdisplay.h"
+#include "scripting/flashdisplay.h"
 #include "timer.h"
-#include "graphics.h"
-#include "sound.h"
+#include "backends/graphics.h"
+#include "backends/sound.h"
+
+#include "platforms/pluginutils.h"
 
 #include <GL/glew.h>
 #ifndef WIN32
 #include <GL/glx.h>
 #else
 //#include <windows.h>
-#endif
-
-#ifdef COMPILE_PLUGIN
-#include <gtk/gtk.h>
 #endif
 
 namespace lightspark
@@ -58,9 +54,6 @@ class InputThread;
 class RenderThread;
 class ParseThread;
 class Tag;
-
-typedef void* (*thread_worker)(void*);
-long timeDiff(timespec& s, timespec& d);
 
 class SWF_HEADER
 {
@@ -94,8 +87,6 @@ private:
 	//frameSize and frameRate are valid only after the header has been parsed
 	RECT frameSize;
 	float frameRate;
-	mutable sem_t sem_valid_size;
-	mutable sem_t sem_valid_rate;
 	//Frames mutex (shared with drawing thread)
 	Mutex mutexFrames;
 	bool toBind;
@@ -160,26 +151,6 @@ public:
 	void plot(uint32_t max, FTFont* font);
 };
 
-enum ENGINE { NONE=0, SDL, GTKPLUG};
-typedef void(*helper_t)(void*);
-#ifdef COMPILE_PLUGIN
-struct NPAPI_params
-{
-	Display* display;
-	GtkWidget* container;
-	VisualID visual;
-	Window window;
-	int width;
-	int height;
-	void (*helper)(void* th, helper_t func, void* privArg);
-	void* helperArg;
-};
-#else
-struct NPAPI_params
-{
-};
-#endif
-
 class SystemState: public RootMovieClip
 {
 private:
@@ -220,7 +191,7 @@ private:
 #endif
 	void stopEngines();
 	//Useful to wait for complete download of the SWF
-	Condition fileDumpAvailable;
+	Semaphore fileDumpAvailable;
 	tiny_string dumpedSWFPath;
 	bool waitingForDump;
 	//Data for handling Gnash fallback
@@ -297,7 +268,14 @@ public:
 	void setRenderRate(float rate);
 	float getRenderRate();
 
+	//Stuff to be done once for process and not for plugin instance
+	static void staticInit() DLL_PUBLIC;
+	static void staticDeinit() DLL_PUBLIC;
+
 	DownloadManager* downloadManager;
+
+	enum SCALE_MODE { EXACT_FIT=0, NO_BORDER=1, NO_SCALE=2, SHOW_ALL=3 };
+	SCALE_MODE scaleMode;
 };
 
 class ParseThread: public IThreadJob
@@ -315,133 +293,6 @@ public:
 	ParseThread(RootMovieClip* r,std::istream& in) DLL_PUBLIC;
 	~ParseThread();
 	void wait() DLL_PUBLIC;
-};
-
-class InputThread
-{
-private:
-	SystemState* m_sys;
-	pthread_t t;
-	bool terminated;
-	static void* sdl_worker(InputThread*);
-#ifdef COMPILE_PLUGIN
-	NPAPI_params* npapi_params;
-	static gboolean gtkplug_worker(GtkWidget *widget, GdkEvent *event, InputThread* th);
-	static void delayedCreation(InputThread* th);
-#endif
-
-	std::vector<InteractiveObject* > listeners;
-	Mutex mutexListeners;
-	Mutex mutexDragged;
-
-	Sprite* curDragged;
-	InteractiveObject* lastMouseDownTarget;
-	RECT dragLimit;
-public:
-	InputThread(SystemState* s,ENGINE e, void* param=NULL);
-	~InputThread();
-	void wait();
-	void addListener(InteractiveObject* ob);
-	void removeListener(InteractiveObject* ob);
-	void enableDrag(Sprite* s, const RECT& limit);
-	void disableDrag();
-};
-
-class RenderThread: public ITickJob
-{
-private:
-	SystemState* m_sys;
-	pthread_t t;
-	bool terminated;
-	static void* sdl_worker(RenderThread*);
-#ifdef COMPILE_PLUGIN
-	NPAPI_params* npapi_params;
-	static void* gtkplug_worker(RenderThread*);
-#endif
-	void commonGLInit(int width, int height);
-	void commonGLDeinit();
-	sem_t render;
-	sem_t inputDone;
-	bool inputNeeded;
-	bool inputDisabled;
-	std::string fontPath;
-
-#ifndef WIN32
-	Display* mDisplay;
-	GLXFBConfig mFBConfig;
-	GLXContext mContext;
-	Window mWindow;
-
-	timespec ts,td;
-#endif
-	bool loadShaderPrograms();
-	uint32_t* interactive_buffer;
-	bool tempBufferAcquired;
-	void tick();
-	int frameCount;
-	int secsCount;
-	std::vector<float> idStack;
-	Mutex mutexResources;
-	std::set<GLResource*> managedResources;
-public:
-	RenderThread(SystemState* s,ENGINE e, void* param=NULL);
-	~RenderThread();
-	void wait();
-	void draw();
-	float getIdAt(int x, int y);
-	//The calling context MUST call this function with the transformation matrix ready
-	void glAcquireTempBuffer(number_t xmin, number_t xmax, number_t ymin, number_t ymax);
-	void glBlitTempBuffer(number_t xmin, number_t xmax, number_t ymin, number_t ymax);
-	/**
-		Add a GLResource to the managed pool
-		@param res The GLResource to be manged
-		@pre running inside the renderthread OR the resourceMutex is acquired
-	*/
-	void addResource(GLResource* res);
-	/**
-		Remove a GLResource from the managed pool
-		@param res The GLResource to stop managing
-		@pre running inside the renderthread OR the resourceMutex is acquired
-	*/
-	void removeResource(GLResource* res);
-	/**
-		Acquire the resource mutex to do resource cleanup
-	*/
-	void acquireResourceMutex();
-	/**
-		Release the resource mutex
-	*/
-	void releaseResourceMutex();
-
-	void requestInput();
-	bool glAcquireIdBuffer();
-	void glReleaseIdBuffer();
-	void pushId()
-	{
-		idStack.push_back(currentId);
-	}
-	void popId()
-	{
-		currentId=idStack.back();
-		idStack.pop_back();
-	}
-
-	//OpenGL programs
-	int gpu_program;
-	int blitter_program;
-	GLuint fboId;
-	TextureBuffer dataTex;
-	TextureBuffer mainTex;
-	TextureBuffer tempTex;
-	TextureBuffer inputTex;
-	int width;
-	int height;
-	bool hasNPOTTextures;
-	GLuint fragmentTexScaleUniform;
-	
-	InteractiveObject* selectedDebug;
-	float currentId;
-	bool materialOverride;
 };
 
 };

@@ -18,40 +18,32 @@
 **************************************************************************/
 
 #include <string>
-#include <sstream>
 #include <pthread.h>
-#include <sys/wait.h>
 #include <algorithm>
-#include "compat.h"
-#include <SDL.h>
-#include "abc.h"
-#include "flashdisplay.h"
-#include "flashevents.h"
+#include "scripting/abc.h"
+#include "scripting/flashdisplay.h"
+#include "scripting/flashevents.h"
 #include "swf.h"
 #include "logger.h"
-#include "actions.h"
-#include "streams.h"
-#include "asobjects.h"
-#include "textfile.h"
-#include "class.h"
-#include "netutils.h"
+#include "parsing/streams.h"
+#include "asobject.h"
+#include "scripting/class.h"
+#include "backends/netutils.h"
+#include "backends/rendering.h"
 
 #include <GL/glew.h>
 #ifdef ENABLE_CURL
 #include <curl/curl.h>
+
+#include "compat.h"
 #endif
 #ifdef ENABLE_LIBAVCODEC
 extern "C" {
 #include <libavcodec/avcodec.h>
 }
 #endif
-#ifndef WIN32
-#include <GL/glx.h>
-#include <fontconfig/fontconfig.h>
-#endif
 
 #ifdef COMPILE_PLUGIN
-#include <gdk/gdkkeysyms.h>
 #include <gdk/gdkx.h>
 #endif
 
@@ -80,17 +72,7 @@ SWF_HEADER::SWF_HEADER(istream& in):valid(false)
 		LOG(LOG_NO_INFO,"No SWF file signature found");
 		return;
 	}
-	pt->version=Version;
 	in >> FrameSize >> FrameRate >> FrameCount;
-	float frameRate=FrameRate;
-	frameRate/=256;
-	LOG(LOG_NO_INFO,"FrameRate " << frameRate);
-
-	pt->root->setFrameRate(frameRate);
-	//TODO: setting render rate should be done when the clip is added to the displaylist
-	sys->setRenderRate(frameRate);
-	pt->root->version=Version;
-	pt->root->fileLenght=FileLength;
 	valid=true;
 }
 
@@ -100,8 +82,6 @@ RootMovieClip::RootMovieClip(LoaderInfo* li, bool isSys):initialized(false),pars
 	root=this;
 	sem_init(&mutex,0,1);
 	sem_init(&new_frame,0,0);
-	sem_init(&sem_valid_size,0,0);
-	sem_init(&sem_valid_rate,0,0);
 	loaderInfo=li;
 	//Reset framesLoaded, as there are still not available
 	framesLoaded=0;
@@ -115,8 +95,6 @@ RootMovieClip::~RootMovieClip()
 {
 	sem_destroy(&mutex);
 	sem_destroy(&new_frame);
-	sem_destroy(&sem_valid_rate);
-	sem_destroy(&sem_valid_size);
 }
 
 void RootMovieClip::parsingFailed()
@@ -124,8 +102,6 @@ void RootMovieClip::parsingFailed()
 	//The parsing is failed, we have no change to be ever valid
 	parsingIsFailed=true;
 	sem_post(&new_frame);
-	sem_post(&sem_valid_size);
-	sem_post(&sem_valid_rate);
 }
 
 void RootMovieClip::bindToName(const tiny_string& n)
@@ -149,10 +125,7 @@ void RootMovieClip::unregisterChildClip(MovieClip* clip)
 	clip->decRef();
 }
 
-SystemState::SystemState(ParseThread* p):RootMovieClip(NULL,true),parseThread(p),renderRate(0),error(false),shutdown(false),
-	renderThread(NULL),inputThread(NULL),engine(NONE),fileDumpAvailable(0),waitingForDump(false),vmVersion(VMNONE),childPid(0),
-	useGnashFallback(false),showProfilingData(false),showInteractiveMap(false),showDebug(false),xOffset(0),yOffset(0),currentVm(NULL),
-	finalizingDestruction(false),useInterpreter(true),useJit(false),downloadManager(NULL)
+void SystemState::staticInit()
 {
 	//Do needed global initialization
 #ifdef ENABLE_CURL
@@ -161,7 +134,20 @@ SystemState::SystemState(ParseThread* p):RootMovieClip(NULL,true),parseThread(p)
 #ifdef ENABLE_LIBAVCODEC
 	avcodec_register_all();
 #endif
+}
 
+void SystemState::staticDeinit()
+{
+#ifdef ENABLE_CURL
+	curl_global_cleanup();
+#endif
+}
+
+SystemState::SystemState(ParseThread* p):RootMovieClip(NULL,true),parseThread(p),renderRate(0),error(false),shutdown(false),
+	renderThread(NULL),inputThread(NULL),engine(NONE),fileDumpAvailable(0),waitingForDump(false),vmVersion(VMNONE),childPid(0),
+	useGnashFallback(false),showProfilingData(false),showInteractiveMap(false),showDebug(false),xOffset(0),yOffset(0),currentVm(NULL),
+	finalizingDestruction(false),useInterpreter(true),useJit(false),downloadManager(NULL),scaleMode(SHOW_ALL)
+{
 	cookiesFileName[0]=0;
 	//Create the thread pool
 	sys=this;
@@ -307,15 +293,19 @@ void SystemState::setParameters(ASObject* p)
 void SystemState::stopEngines()
 {
 	//Stops the thread that is parsing us
-	parseThread->stop();
-	parseThread->wait();
-	threadPool->stop();
+	if(parseThread)
+	{
+		parseThread->stop();
+		parseThread->wait();
+	}
+	if(threadPool)
+		threadPool->stop();
 	if(timerThread)
 		timerThread->wait();
 	delete downloadManager;
 	downloadManager=NULL;
-	delete currentVm;
-	currentVm=NULL;
+	if(currentVm)
+		currentVm->shutdown();
 	delete timerThread;
 	timerThread=NULL;
 #ifdef ENABLE_SOUND
@@ -329,8 +319,7 @@ SystemState::~SystemState()
 	//Kill our child process if any
 	if(childPid)
 	{
-		kill(childPid, SIGTERM);
-		waitpid(childPid, NULL, 0);
+		kill_child(childPid);
 	}
 	//Delete the temporary cookies file
 	if(cookiesFileName[0])
@@ -338,6 +327,7 @@ SystemState::~SystemState()
 	assert(shutdown);
 	//The thread pool should be stopped before everything
 	delete threadPool;
+	threadPool=NULL;
 	stopEngines();
 
 	//decRef all our object before destroying classes
@@ -366,13 +356,17 @@ SystemState::~SystemState()
 		delete it->second;
 		//it->second->decRef()
 	}
+	//The Vm must be destroyed this late to clean all managed integers and numbers
+	delete currentVm;
 
 	//Also destroy all tags
 	for(unsigned int i=0;i<tagsStorage.size();i++)
 		delete tagsStorage[i];
 
 	delete renderThread;
+	renderThread=NULL;
 	delete inputThread;
+	inputThread=NULL;
 	sem_destroy(&terminated);
 }
 
@@ -411,9 +405,14 @@ void SystemState::setError(const string& c)
 void SystemState::setShutdownFlag()
 {
 	sem_wait(&mutex);
-	shutdown=true;
 	if(currentVm)
-		currentVm->addEvent(NULL,new ShutdownEvent());
+	{
+		ShutdownEvent* e=new ShutdownEvent;
+		currentVm->addEvent(NULL,e);
+		e->decRef();
+	}
+	//Set the flag after sending the event, otherwise it's ignored by the VM
+	shutdown=true;
 
 	sem_post(&terminated);
 	sem_post(&mutex);
@@ -426,6 +425,8 @@ void SystemState::wait()
 		renderThread->wait();
 	if(inputThread)
 		inputThread->wait();
+	if(currentVm)
+		currentVm->shutdown();
 }
 
 float SystemState::getRenderRate()
@@ -494,10 +495,10 @@ void SystemState::createEngines()
 {
 	sem_wait(&mutex);
 	assert(renderThread==NULL && inputThread==NULL);
+#ifdef COMPILE_PLUGIN
 	//Check if we should fall back on gnash
 	if(useGnashFallback && engine==GTKPLUG && vmVersion!=AVM2)
 	{
-#ifdef COMPILE_PLUGIN
 		if(dumpedSWFPath.len()==0) //The path is not known yet
 		{
 			waitingForDump=true;
@@ -566,11 +567,11 @@ void SystemState::createEngines()
 			stopEngines();
 			return;
 		}
-#else 
-		//COMPILE_PLUGIN not defined
-		throw new UnsupportedException("GNASH fallback not available when not built with COMPILE_PLUGIN");
-#endif
 	}
+#else 
+	//COMPILE_PLUGIN not defined
+	throw new UnsupportedException("GNASH fallback not available when not built with COMPILE_PLUGIN");
+#endif
 
 	if(engine==GTKPLUG) //The engines must be created int the context of the main thread
 	{
@@ -796,6 +797,15 @@ void ParseThread::execute()
 		SWF_HEADER h(f);
 		if(!h.valid)
 			throw ParseException("Not an SWF file");
+		version=h.Version;
+		root->version=h.Version;
+		root->fileLenght=h.FileLength;
+		float frameRate=h.FrameRate;
+		frameRate/=256;
+		LOG(LOG_NO_INFO,"FrameRate " << frameRate);
+		root->setFrameRate(frameRate);
+		//TODO: setting render rate should be done when the clip is added to the displaylist
+		sys->setRenderRate(frameRate);
 		root->setFrameSize(h.getFrameSize());
 		root->setFrameCount(h.FrameCount);
 
@@ -877,770 +887,6 @@ void ParseThread::wait()
 	}
 }
 
-void RenderThread::wait()
-{
-	if(terminated)
-		return;
-	terminated=true;
-	//Signal potentially blocking semaphore
-	sem_post(&render);
-	int ret=pthread_join(t,NULL);
-	assert_and_throw(ret==0);
-}
-
-InputThread::InputThread(SystemState* s,ENGINE e, void* param):m_sys(s),t(0),terminated(false),
-	mutexListeners("Input listeners"),mutexDragged("Input dragged"),curDragged(NULL),lastMouseDownTarget(NULL)
-{
-	LOG(LOG_NO_INFO,"Creating input thread");
-	if(e==SDL)
-		pthread_create(&t,NULL,(thread_worker)sdl_worker,this);
-#ifdef COMPILE_PLUGIN
-	else if(e==GTKPLUG)
-	{
-		npapi_params=(NPAPI_params*)param;
-		GtkWidget* container=npapi_params->container;
-		gtk_widget_set_can_focus(container,True);
-		gtk_widget_add_events(container,GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK |
-						GDK_POINTER_MOTION_MASK | GDK_SCROLL_MASK | GDK_EXPOSURE_MASK | GDK_VISIBILITY_NOTIFY_MASK |
-						GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_FOCUS_CHANGE_MASK);
-		g_signal_connect(G_OBJECT(container), "event", G_CALLBACK(gtkplug_worker), this);
-	}
-#endif
-	else
-		::abort();
-}
-
-InputThread::~InputThread()
-{
-	wait();
-}
-
-void InputThread::wait()
-{
-	if(terminated)
-		return;
-	if(t)
-		pthread_join(t,NULL);
-	terminated=true;
-}
-
-#ifdef COMPILE_PLUGIN
-//This is a GTK event handler and the gdk lock is already acquired
-gboolean InputThread::gtkplug_worker(GtkWidget *widget, GdkEvent *event, InputThread* th)
-{
-	//Set sys to this SystemState
-	sys=th->m_sys;
-	gboolean ret=FALSE;
-	switch(event->type)
-	{
-		case GDK_KEY_PRESS:
-		{
-			//cout << "key press" << endl;
-			switch(event->key.keyval)
-			{
-				case GDK_i:
-					th->m_sys->showInteractiveMap=!th->m_sys->showInteractiveMap;
-					break;
-				case GDK_p:
-					th->m_sys->showProfilingData=!th->m_sys->showProfilingData;
-					break;
-				default:
-					break;
-			}
-			ret=TRUE;
-			break;
-		}
-		case GDK_EXPOSE:
-		{
-			//Signal the renderThread
-			th->m_sys->getRenderThread()->draw();
-			ret=TRUE;
-			break;
-		}
-		case GDK_BUTTON_PRESS:
-		{
-			//Grab focus
-			gtk_widget_grab_focus(widget);
-			//cout << "Press" << endl;
-			Locker locker(th->mutexListeners);
-			th->m_sys->getRenderThread()->requestInput();
-			float selected=th->m_sys->getRenderThread()->getIdAt(event->button.x,event->button.y);
-			if(selected!=0)
-			{
-				int index=lrint(th->listeners.size()*selected);
-				index--;
-
-				th->lastMouseDownTarget=th->listeners[index];
-				//Add event to the event queue
-				th->m_sys->currentVm->addEvent(th->listeners[index],Class<MouseEvent>::getInstanceS("mouseDown",true));
-				//And select that object for debugging (if needed)
-				if(th->m_sys->showDebug)
-					th->m_sys->getRenderThread()->selectedDebug=th->listeners[index];
-			}
-			ret=TRUE;
-			break;
-		}
-		case GDK_BUTTON_RELEASE:
-		{
-			//cout << "Release" << endl;
-			Locker locker(th->mutexListeners);
-			th->m_sys->getRenderThread()->requestInput();
-			float selected=th->m_sys->getRenderThread()->getIdAt(event->button.x,event->button.y);
-			if(selected!=0)
-			{
-				int index=lrint(th->listeners.size()*selected);
-				index--;
-
-				//Add event to the event queue
-				getVm()->addEvent(th->listeners[index],Class<MouseEvent>::getInstanceS("mouseUp",true));
-				//Also send the click event
-				if(th->lastMouseDownTarget==th->listeners[index])
-				{
-					getVm()->addEvent(th->listeners[index],Class<MouseEvent>::getInstanceS("click",true));
-					th->lastMouseDownTarget=NULL;
-				}
-			}
-			ret=TRUE;
-			break;
-		}
-		default:
-#ifdef EXPENSIVE_DEBUG
-			cout << "GDKTYPE " << event->type << endl;
-#endif
-			break;
-	}
-	return ret;
-}
-#endif
-
-void* InputThread::sdl_worker(InputThread* th)
-{
-	sys=th->m_sys;
-	SDL_Event event;
-	while(SDL_WaitEvent(&event))
-	{
-		switch(event.type)
-		{
-			case SDL_KEYDOWN:
-			{
-				switch(event.key.keysym.sym)
-				{
-					case SDLK_d:
-						th->m_sys->showDebug=!th->m_sys->showDebug;
-						break;
-					case SDLK_i:
-						th->m_sys->showInteractiveMap=!th->m_sys->showInteractiveMap;
-						break;
-					case SDLK_p:
-						th->m_sys->showProfilingData=!th->m_sys->showProfilingData;
-						break;
-					case SDLK_q:
-						th->m_sys->setShutdownFlag();
-						if(th->m_sys->currentVm)
-							LOG(LOG_CALLS,"We still miss " << sys->currentVm->getEventQueueSize() << " events");
-						pthread_exit(0);
-						break;
-					case SDLK_s:
-						th->m_sys->state.stop_FP=true;
-						break;
-					case SDLK_DOWN:
-						th->m_sys->yOffset-=10;
-						break;
-					case SDLK_UP:
-						th->m_sys->yOffset+=10;
-						break;
-					case SDLK_LEFT:
-						th->m_sys->xOffset-=10;
-						break;
-					case SDLK_RIGHT:
-						th->m_sys->xOffset+=10;
-						break;
-					//Ignore any other keystrokes
-					default:
-						break;
-				}
-				break;
-			}
-			case SDL_MOUSEBUTTONDOWN:
-			{
-				Locker locker(th->mutexListeners);
-				th->m_sys->getRenderThread()->requestInput();
-				float selected=th->m_sys->getRenderThread()->getIdAt(event.button.x,event.button.y);
-				if(selected==0)
-				{
-					th->m_sys->getRenderThread()->selectedDebug=NULL;
-					break;
-				}
-
-				int index=lrint(th->listeners.size()*selected);
-				index--;
-
-				th->lastMouseDownTarget=th->listeners[index];
-				//Add event to the event queue
-				th->m_sys->currentVm->addEvent(th->listeners[index],Class<MouseEvent>::getInstanceS("mouseDown",true));
-				//And select that object for debugging (if needed)
-				if(th->m_sys->showDebug)
-					th->m_sys->getRenderThread()->selectedDebug=th->listeners[index];
-				break;
-			}
-			case SDL_MOUSEBUTTONUP:
-			{
-				Locker locker(th->mutexListeners);
-				th->m_sys->getRenderThread()->requestInput();
-				float selected=th->m_sys->getRenderThread()->getIdAt(event.button.x,event.button.y);
-				if(selected==0)
-					break;
-
-				int index=lrint(th->listeners.size()*selected);
-				index--;
-
-				//Add event to the event queue
-				getVm()->addEvent(th->listeners[index],Class<MouseEvent>::getInstanceS("mouseUp",true));
-				//Also send the click event
-				if(th->lastMouseDownTarget==th->listeners[index])
-				{
-					getVm()->addEvent(th->listeners[index],Class<MouseEvent>::getInstanceS("click",true));
-					th->lastMouseDownTarget=NULL;
-				}
-				break;
-			}
-			case SDL_QUIT:
-			{
-				th->m_sys->setShutdownFlag();
-				if(th->m_sys->currentVm)
-					LOG(LOG_CALLS,"We still miss " << sys->currentVm->getEventQueueSize() << " events");
-				pthread_exit(0);
-				break;
-			}
-		}
-	}
-	return NULL;
-}
-
-void InputThread::addListener(InteractiveObject* ob)
-{
-	Locker locker(mutexListeners);
-	assert(ob);
-
-#ifndef NDEBUG
-	vector<InteractiveObject*>::const_iterator it=find(listeners.begin(),listeners.end(),ob);
-	//Object is already register, should not happen
-	assert_and_throw(it==listeners.end());
-#endif
-	
-	//Register the listener
-	listeners.push_back(ob);
-	unsigned int count=listeners.size();
-
-	//Set a unique id for listeners in the range [0,1]
-	//count is the number of listeners, this is correct so that no one gets 0
-	float increment=1.0f/count;
-	float cur=increment;
-	for(unsigned int i=0;i<count;i++)
-	{
-		listeners[i]->setId(cur);
-		cur+=increment;
-	}
-}
-
-void InputThread::removeListener(InteractiveObject* ob)
-{
-	Locker locker(mutexListeners);
-
-	vector<InteractiveObject*>::iterator it=find(listeners.begin(),listeners.end(),ob);
-	if(it==listeners.end()) //Listener not found
-		return;
-	
-	//Unregister the listener
-	listeners.erase(it);
-	
-	unsigned int count=listeners.size();
-
-	//Set a unique id for listeners in the range [0,1]
-	//count is the number of listeners, this is correct so that no one gets 0
-	float increment=1.0f/count;
-	float cur=increment;
-	for(unsigned int i=0;i<count;i++)
-	{
-		listeners[i]->setId(cur);
-		cur+=increment;
-	}
-}
-
-void InputThread::enableDrag(Sprite* s, const lightspark::RECT& limit)
-{
-	Locker locker(mutexDragged);
-	if(s==curDragged)
-		return;
-	
-	if(curDragged) //Stop dragging the previous sprite
-		curDragged->decRef();
-	
-	assert(s);
-	//We need to avoid that the object is destroyed
-	s->incRef();
-	
-	curDragged=s;
-	dragLimit=limit;
-}
-
-void InputThread::disableDrag()
-{
-	Locker locker(mutexDragged);
-	if(curDragged)
-	{
-		curDragged->decRef();
-		curDragged=NULL;
-	}
-}
-
-RenderThread::RenderThread(SystemState* s,ENGINE e,void* params):m_sys(s),terminated(false),inputNeeded(false),inputDisabled(false),
-	interactive_buffer(NULL),tempBufferAcquired(false),frameCount(0),secsCount(0),mutexResources("GLResource Mutex"),dataTex(false),
-	mainTex(false),tempTex(false),inputTex(false),hasNPOTTextures(false),selectedDebug(NULL),currentId(0),materialOverride(false)
-{
-	LOG(LOG_NO_INFO,"RenderThread this=" << this);
-	m_sys=s;
-	sem_init(&render,0,0);
-	sem_init(&inputDone,0,0);
-
-#ifdef WIN32
-	fontPath = "TimesNewRoman.ttf"
-#else
-	FcPattern *pat, *match;
-	FcResult result = FcResultMatch;
-	char *font = NULL;
-
-	pat = FcPatternCreate();
-	FcPatternAddString(pat, FC_FAMILY, (const FcChar8 *)"Serif");
-	FcConfigSubstitute(NULL, pat, FcMatchPattern);
-	FcDefaultSubstitute(pat);
-	match = FcFontMatch(NULL, pat, &result);
-	FcPatternDestroy(pat);
-
-	if (result != FcResultMatch)
-	{
-		LOG(LOG_ERROR,"Unable to find suitable Serif font");
-		throw RunTimeException("Unable to find Serif font");
-	}
-
-	FcPatternGetString(match, FC_FILE, 0, (FcChar8 **) &font);
-	fontPath = font;
-	FcPatternDestroy(match);
-	LOG(LOG_NO_INFO, "Font File is " << fontPath);
-#endif
-
-	if(e==SDL)
-		pthread_create(&t,NULL,(thread_worker)sdl_worker,this);
-#ifdef COMPILE_PLUGIN
-	else if(e==GTKPLUG)
-	{
-		npapi_params=(NPAPI_params*)params;
-		pthread_create(&t,NULL,(thread_worker)gtkplug_worker,this);
-	}
-#endif
-	clock_gettime(CLOCK_REALTIME,&ts);
-}
-
-RenderThread::~RenderThread()
-{
-	wait();
-	sem_destroy(&render);
-	sem_destroy(&inputDone);
-	delete[] interactive_buffer;
-	LOG(LOG_NO_INFO,"~RenderThread this=" << this);
-}
-
-void RenderThread::addResource(GLResource* res)
-{
-	managedResources.insert(res);
-}
-
-void RenderThread::removeResource(GLResource* res)
-{
-	managedResources.erase(res);
-}
-
-void RenderThread::acquireResourceMutex()
-{
-	mutexResources.lock();
-}
-
-void RenderThread::releaseResourceMutex()
-{
-	mutexResources.unlock();
-}
-
-void RenderThread::requestInput()
-{
-	inputNeeded=true;
-	sem_post(&render);
-	sem_wait(&inputDone);
-}
-
-bool RenderThread::glAcquireIdBuffer()
-{
-	if(inputDisabled)
-		return false;
-	//TODO: PERF: on the id buffer stuff are drawn more than once
-	if(currentId!=0)
-	{
-		glDrawBuffer(GL_COLOR_ATTACHMENT2);
-		materialOverride=true;
-		FILLSTYLE::fixedColor(currentId,currentId,currentId);
-		return true;
-	}
-	
-	return false;
-}
-
-void RenderThread::glReleaseIdBuffer()
-{
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-	materialOverride=false;
-}
-
-void RenderThread::glAcquireTempBuffer(number_t xmin, number_t xmax, number_t ymin, number_t ymax)
-{
-	assert(tempBufferAcquired==false);
-	tempBufferAcquired=true;
-
-	glDrawBuffer(GL_COLOR_ATTACHMENT1);
-	materialOverride=false;
-	
-	glDisable(GL_BLEND);
-	glColor4f(0,0,0,0); //No output is fairly ok to clear
-	glBegin(GL_QUADS);
-		glVertex2f(xmin,ymin);
-		glVertex2f(xmax,ymin);
-		glVertex2f(xmax,ymax);
-		glVertex2f(xmin,ymax);
-	glEnd();
-}
-
-void RenderThread::glBlitTempBuffer(number_t xmin, number_t xmax, number_t ymin, number_t ymax)
-{
-	assert(tempBufferAcquired==true);
-	tempBufferAcquired=false;
-
-	//Use the blittler program to blit only the used buffer
-	glUseProgram(blitter_program);
-	glEnable(GL_BLEND);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-	rt->tempTex.bind();
-	glBegin(GL_QUADS);
-		glVertex2f(xmin,ymin);
-		glVertex2f(xmax,ymin);
-		glVertex2f(xmax,ymax);
-		glVertex2f(xmin,ymax);
-	glEnd();
-	glUseProgram(gpu_program);
-}
-
-#ifdef COMPILE_PLUGIN
-void* RenderThread::gtkplug_worker(RenderThread* th)
-{
-	sys=th->m_sys;
-	rt=th;
-	NPAPI_params* p=th->npapi_params;
-
-	RECT size=sys->getFrameSize();
-	int swf_width=size.Xmax/20;
-	int swf_height=size.Ymax/20;
-
-	int window_width=p->width;
-	int window_height=p->height;
-
-	float scalex=window_width;
-	scalex/=swf_width;
-	float scaley=window_height;
-	scaley/=swf_height;
-
-	rt->width=window_width;
-	rt->height=window_height;
-	
-	Display* d=XOpenDisplay(NULL);
-
-	int a,b;
-	Bool glx_present=glXQueryVersion(d,&a,&b);
-	if(!glx_present)
-	{
-		LOG(LOG_ERROR,"glX not present");
-		return NULL;
-	}
-	int attrib[10]={GLX_BUFFER_SIZE,24,GLX_DOUBLEBUFFER,True,None};
-	GLXFBConfig* fb=glXChooseFBConfig(d, 0, attrib, &a);
-	if(!fb)
-	{
-		attrib[2]=None;
-		fb=glXChooseFBConfig(d, 0, attrib, &a);
-		LOG(LOG_ERROR,"Falling back to no double buffering");
-	}
-	if(!fb)
-	{
-		LOG(LOG_ERROR,"Could not find any GLX configuration");
-		::abort();
-	}
-	int i;
-	for(i=0;i<a;i++)
-	{
-		int id;
-		glXGetFBConfigAttrib(d,fb[i],GLX_VISUAL_ID,&id);
-		if(id==(int)p->visual)
-			break;
-	}
-	if(i==a)
-	{
-		//No suitable id found
-		LOG(LOG_ERROR,"No suitable graphics configuration available");
-		return NULL;
-	}
-	th->mFBConfig=fb[i];
-	cout << "Chosen config " << hex << fb[i] << dec << endl;
-	XFree(fb);
-
-	th->mContext = glXCreateNewContext(d,th->mFBConfig,GLX_RGBA_TYPE ,NULL,1);
-	GLXWindow glxWin=p->window;
-	glXMakeCurrent(d, glxWin,th->mContext);
-	if(!glXIsDirect(d,th->mContext))
-		printf("Indirect!!\n");
-
-	th->commonGLInit(window_width, window_height);
-	
-	ThreadProfile* profile=sys->allocateProfiler(RGB(200,0,0));
-	profile->setTag("Render");
-	FTTextureFont font(rt->fontPath.c_str());
-	if(font.Error())
-	{
-		LOG(LOG_ERROR,"Unable to load serif font");
-		throw RunTimeException("Unable to load font");
-	}
-	
-	font.FaceSize(20);
-
-	glEnable(GL_TEXTURE_2D);
-	try
-	{
-		while(1)
-		{
-			sem_wait(&th->render);
-			Chronometer chronometer;
-			
-			if(th->inputNeeded)
-			{
-				th->inputTex.bind();
-				glGetTexImage(GL_TEXTURE_2D,0,GL_BGRA,GL_UNSIGNED_BYTE,th->interactive_buffer);
-				th->inputNeeded=false;
-				sem_post(&th->inputDone);
-			}
-
-			//Before starting rendering, cleanup all the request arrived in the meantime
-			int fakeRenderCount=0;
-			while(sem_trywait(&th->render)==0)
-			{
-				if(th->m_sys->isShuttingDown())
-					break;
-				fakeRenderCount++;
-			}
-			
-			if(fakeRenderCount)
-				LOG(LOG_NO_INFO,"Faking " << fakeRenderCount << " renderings");
-			if(th->m_sys->isShuttingDown())
-				break;
-
-			if(th->m_sys->isOnError())
-			{
-				glUseProgram(0);
-
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				glDrawBuffer(GL_BACK);
-				glLoadIdentity();
-
-				glClearColor(0,0,0,1);
-				glClear(GL_COLOR_BUFFER_BIT);
-				glColor3f(0.8,0.8,0.8);
-					    
-				font.Render("We're sorry, Lightspark encountered a yet unsupported Flash file",
-					    -1,FTPoint(0,th->height/2));
-
-				stringstream errorMsg;
-				errorMsg << "SWF file: " << th->m_sys->getOrigin();
-				font.Render(errorMsg.str().c_str(),
-					    -1,FTPoint(0,th->height/2-20));
-					    
-				errorMsg.str("");
-				errorMsg << "Cause: " << th->m_sys->errorCause;
-				font.Render(errorMsg.str().c_str(),
-					    -1,FTPoint(0,th->height/2-40));
-				
-				glFlush();
-				glXSwapBuffers(d,glxWin);
-			}
-			else
-			{
-				glXSwapBuffers(d,glxWin);
-
-				glBindFramebuffer(GL_FRAMEBUFFER, rt->fboId);
-				glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-				RGB bg=sys->getBackground();
-				glClearColor(bg.Red/255.0F,bg.Green/255.0F,bg.Blue/255.0F,0);
-				glClear(GL_COLOR_BUFFER_BIT);
-				glLoadIdentity();
-				glScalef(scalex,scaley,1);
-				
-				sys->Render();
-
-				glFlush();
-
-				glLoadIdentity();
-
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				glDrawBuffer(GL_BACK);
-
-				glClearColor(0,0,0,1);
-				glClear(GL_COLOR_BUFFER_BIT);
-
-				TextureBuffer* curBuf=((th->m_sys->showInteractiveMap)?&th->inputTex:&th->mainTex);
-				curBuf->bind();
-				curBuf->setTexScale(th->fragmentTexScaleUniform);
-				glColor4f(0,0,1,0);
-				glBegin(GL_QUADS);
-					glTexCoord2f(0,1);
-					glVertex2i(0,0);
-					glTexCoord2f(1,1);
-					glVertex2i(th->width,0);
-					glTexCoord2f(1,0);
-					glVertex2i(th->width,th->height);
-					glTexCoord2f(0,0);
-					glVertex2i(0,th->height);
-				glEnd();
-
-				if(sys->showProfilingData)
-				{
-					glUseProgram(0);
-					glDisable(GL_TEXTURE_2D);
-
-					//Draw bars
-					glColor4f(0.7,0.7,0.7,0.7);
-					glBegin(GL_LINES);
-					for(int i=1;i<10;i++)
-					{
-						glVertex2i(0,(i*th->height/10));
-						glVertex2i(th->width,(i*th->height/10));
-					}
-					glEnd();
-				
-					list<ThreadProfile>::iterator it=sys->profilingData.begin();
-					for(;it!=sys->profilingData.end();it++)
-						it->plot(1000000/sys->getFrameRate(),&font);
-
-					glEnable(GL_TEXTURE_2D);
-					glUseProgram(rt->gpu_program);
-				}
-				//Call glFlush to offload work on the GPU
-				glFlush();
-			}
-			profile->accountTime(chronometer.checkpoint());
-		}
-	}
-	catch(LightsparkException& e)
-	{
-		LOG(LOG_ERROR,"Exception in RenderThread " << e.what());
-		sys->setError(e.cause);
-	}
-	glDisable(GL_TEXTURE_2D);
-	//Before destroying the context shutdown all the GLResources
-	set<GLResource*>::const_iterator it=th->managedResources.begin();
-	for(;it!=th->managedResources.end();it++)
-		(*it)->shutdown();
-	th->commonGLDeinit();
-	glXMakeCurrent(d,None,NULL);
-	glXDestroyContext(d,th->mContext);
-	XCloseDisplay(d);
-	return NULL;
-}
-#endif
-
-bool RenderThread::loadShaderPrograms()
-{
-	//Create render program
-	assert(glCreateShader);
-	GLuint f = glCreateShader(GL_FRAGMENT_SHADER);
-	
-	const char *fs = NULL;
-	fs = dataFileRead("lightspark.frag");
-	if(fs==NULL)
-	{
-		LOG(LOG_ERROR,"Shader lightspark.frag not found");
-		throw RunTimeException("Fragment shader code not found");
-	}
-	assert(glShaderSource);
-	glShaderSource(f, 1, &fs,NULL);
-	free((void*)fs);
-
-	bool ret=true;
-	char str[1024];
-	int a;
-	assert(glCompileShader);
-	glCompileShader(f);
-	assert(glGetShaderInfoLog);
-	glGetShaderInfoLog(f,1024,&a,str);
-	LOG(LOG_NO_INFO,"Fragment shader compilation " << str);
-
-	assert(glCreateProgram);
-	gpu_program = glCreateProgram();
-	assert(glAttachShader);
-	glAttachShader(gpu_program,f);
-
-	assert(glLinkProgram);
-	glLinkProgram(gpu_program);
-	assert(glGetProgramiv);
-	glGetProgramiv(gpu_program,GL_LINK_STATUS,&a);
-	if(a==GL_FALSE)
-	{
-		ret=false;
-		return ret;
-	}
-	
-	//Create the blitter shader
-	GLuint v = glCreateShader(GL_VERTEX_SHADER);
-
-	fs = dataFileRead("lightspark.vert");
-	if(fs==NULL)
-	{
-		LOG(LOG_ERROR,"Shader lightspark.vert not found");
-		throw RunTimeException("Vertex shader code not found");
-	}
-	glShaderSource(v, 1, &fs,NULL);
-	free((void*)fs);
-
-	glCompileShader(v);
-	glGetShaderInfoLog(v,1024,&a,str);
-	LOG(LOG_NO_INFO,"Vertex shader compilation " << str);
-
-	blitter_program = glCreateProgram();
-	glAttachShader(blitter_program,v);
-	
-	glLinkProgram(blitter_program);
-	glGetProgramiv(blitter_program,GL_LINK_STATUS,&a);
-	if(a==GL_FALSE)
-	{
-		ret=false;
-		return ret;
-	}
-
-	assert(ret);
-	return true;
-}
-
-float RenderThread::getIdAt(int x, int y)
-{
-	//TODO: use floating point textures
-	uint32_t allocWidth=inputTex.getAllocWidth();
-	return (interactive_buffer[y*allocWidth+x]&0xff)/255.0f;
-}
-
 void RootMovieClip::initialize()
 {
 	if(!initialized && sys->currentVm)
@@ -1693,317 +939,6 @@ void RootMovieClip::Render()
 	MovieClip::Render();
 }
 
-void RenderThread::commonGLDeinit()
-{
-	glBindFramebuffer(GL_FRAMEBUFFER,0);
-	glDeleteFramebuffers(1,&rt->fboId);
-	dataTex.shutdown();
-	mainTex.shutdown();
-	tempTex.shutdown();
-	inputTex.shutdown();
-}
-
-void RenderThread::commonGLInit(int width, int height)
-{
-	//Now we can initialize GLEW
-	glewExperimental = GL_TRUE;
-	GLenum err = glewInit();
-	if (GLEW_OK != err)
-	{
-		LOG(LOG_ERROR,"Cannot initialize GLEW");
-		cout << glewGetErrorString(err) << endl;
-		::abort();
-	}
-	if(!GLEW_VERSION_2_0)
-	{
-		LOG(LOG_ERROR,"Video card does not support OpenGL 2.0... Aborting");
-		::abort();
-	}
-	if(GLEW_ARB_texture_non_power_of_two)
-		hasNPOTTextures=true;
-
-	//Load shaders
-	loadShaderPrograms();
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
-	
-	glViewport(0,0,width,height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0,width,0,height,-100,0);
-
-	glMatrixMode(GL_MODELVIEW);
-	glActiveTexture(GL_TEXTURE0);
-
-	dataTex.init();
-
-	mainTex.init(width, height, GL_NEAREST);
-
-	tempTex.init(width, height, GL_NEAREST);
-
-	inputTex.init(width, height, GL_NEAREST);
-	//Allocated buffer for texture readback
-	interactive_buffer=new uint32_t[inputTex.getAllocWidth()*inputTex.getAllocHeight()];
-
-	//Set uniforms
-	cleanGLErrors();
-	glUseProgram(blitter_program);
-	int texScale=glGetUniformLocation(blitter_program,"texScale");
-	mainTex.setTexScale(texScale);
-	cleanGLErrors();
-
-	glUseProgram(gpu_program);
-	cleanGLErrors();
-	int tex=glGetUniformLocation(gpu_program,"g_tex1");
-	glUniform1i(tex,0);
-	fragmentTexScaleUniform=glGetUniformLocation(gpu_program,"texScale");
-	glUniform2f(fragmentTexScaleUniform,1,1);
-	cleanGLErrors();
-
-	//Default to replace
-	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
-	// create a framebuffer object
-	glGenFramebuffers(1, &fboId);
-	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, mainTex.getId(), 0);
-	//Verify if we have more than an attachment available (1 is guaranteed)
-	GLint numberOfAttachments=0;
-	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &numberOfAttachments);
-	if(numberOfAttachments>=3)
-	{
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D, tempTex.getId(), 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,GL_TEXTURE_2D, inputTex.getId(), 0);
-	}
-	else
-	{
-		LOG(LOG_ERROR,"Non enough color attachments available, input disabled");
-		inputDisabled=true;
-	}
-	
-	// check FBO status
-	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if(status != GL_FRAMEBUFFER_COMPLETE)
-	{
-		LOG(LOG_ERROR,"Incomplete FBO status " << status << "... Aborting");
-		while(err!=GL_NO_ERROR)
-		{
-			LOG(LOG_ERROR,"GL errors during initialization: " << err);
-			err=glGetError();
-		}
-		::abort();
-	}
-}
-
-void* RenderThread::sdl_worker(RenderThread* th)
-{
-	sys=th->m_sys;
-	rt=th;
-	RECT size=sys->getFrameSize();
-	int width=size.Xmax/20;
-	int height=size.Ymax/20;
-	rt->width=width;
-	rt->height=height;
-	SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 8 );
-	SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 8 );
-	SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 8 );
-	SDL_GL_SetAttribute( SDL_GL_SWAP_CONTROL, 0 );
-	SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1); 
-	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-
-	SDL_SetVideoMode( width, height, 24, SDL_OPENGL );
-	th->commonGLInit(width, height);
-
-	ThreadProfile* profile=sys->allocateProfiler(RGB(200,0,0));
-	profile->setTag("Render");
-	FTTextureFont font(rt->fontPath.c_str());
-	if(font.Error())
-		throw RunTimeException("Unable to load font");
-	
-	font.FaceSize(20);
-	try
-	{
-		//Texturing must be enabled otherwise no tex coord will be sent to the shader
-		glEnable(GL_TEXTURE_2D);
-		Chronometer chronometer;
-		while(1)
-		{
-			sem_wait(&th->render);
-			chronometer.checkpoint();
-
-			SDL_GL_SwapBuffers( );
-
-			if(th->inputNeeded)
-			{
-				th->inputTex.bind();
-				glGetTexImage(GL_TEXTURE_2D,0,GL_BGRA,GL_UNSIGNED_BYTE,th->interactive_buffer);
-				th->inputNeeded=false;
-				sem_post(&th->inputDone);
-			}
-
-			//Before starting rendering, cleanup all the request arrived in the meantime
-			int fakeRenderCount=0;
-			while(sem_trywait(&th->render)==0)
-			{
-				if(th->m_sys->isShuttingDown())
-					break;
-				fakeRenderCount++;
-			}
-
-			if(fakeRenderCount)
-				LOG(LOG_NO_INFO,"Faking " << fakeRenderCount << " renderings");
-
-			if(th->m_sys->isShuttingDown())
-				break;
-			SDL_PumpEvents();
-
-			if(th->m_sys->isOnError())
-			{
-				glUseProgram(0);
-
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				glDrawBuffer(GL_BACK);
-				glLoadIdentity();
-
-				glClearColor(0,0,0,1);
-				glClear(GL_COLOR_BUFFER_BIT);
-				glColor3f(0.8,0.8,0.8);
-					    
-				font.Render("We're sorry, Lightspark encountered a yet unsupported Flash file",
-						-1,FTPoint(0,th->height/2));
-
-				stringstream errorMsg;
-				errorMsg << "SWF file: " << th->m_sys->getOrigin();
-				font.Render(errorMsg.str().c_str(),
-						-1,FTPoint(0,th->height/2-20));
-					    
-				errorMsg.str("");
-				errorMsg << "Cause: " << th->m_sys->errorCause;
-				font.Render(errorMsg.str().c_str(),
-						-1,FTPoint(0,th->height/2-40));
-
-				font.Render("Press 'Q' to exit",-1,FTPoint(0,th->height/2-60));
-				
-				glFlush();
-				SDL_GL_SwapBuffers( );
-			}
-			else
-			{
-				glBindFramebuffer(GL_FRAMEBUFFER, rt->fboId);
-				
-				//Clear the id buffer
-				glDrawBuffer(GL_COLOR_ATTACHMENT2);
-				glClearColor(0,0,0,0);
-				glClear(GL_COLOR_BUFFER_BIT);
-				
-				//Clear the back buffer
-				glDrawBuffer(GL_COLOR_ATTACHMENT0);
-				RGB bg=sys->getBackground();
-				glClearColor(bg.Red/255.0F,bg.Green/255.0F,bg.Blue/255.0F,1);
-				glClear(GL_COLOR_BUFFER_BIT);
-				
-				glLoadIdentity();
-				glTranslatef(th->m_sys->xOffset,th->m_sys->yOffset,0);
-				
-				th->m_sys->Render();
-
-				glFlush();
-
-				glLoadIdentity();
-
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				glDrawBuffer(GL_BACK);
-				glDisable(GL_BLEND);
-
-				TextureBuffer* curBuf=((th->m_sys->showInteractiveMap)?&th->inputTex:&th->mainTex);
-				curBuf->bind();
-				curBuf->setTexScale(th->fragmentTexScaleUniform);
-				glColor4f(0,0,1,0);
-				glBegin(GL_QUADS);
-					glTexCoord2f(0,1);
-					glVertex2i(0,0);
-					glTexCoord2f(1,1);
-					glVertex2i(width,0);
-					glTexCoord2f(1,0);
-					glVertex2i(width,height);
-					glTexCoord2f(0,0);
-					glVertex2i(0,height);
-				glEnd();
-				
-				if(th->m_sys->showDebug)
-				{
-					glUseProgram(0);
-					glDisable(GL_TEXTURE_2D);
-					if(th->selectedDebug)
-						th->selectedDebug->debugRender(&font, true);
-					else
-						th->m_sys->debugRender(&font, true);
-					glEnable(GL_TEXTURE_2D);
-				}
-
-				if(th->m_sys->showProfilingData)
-				{
-					glUseProgram(0);
-					glColor3f(0,0,0);
-					char frameBuf[20];
-					snprintf(frameBuf,20,"Frame %u",th->m_sys->state.FP);
-					font.Render(frameBuf,-1,FTPoint(0,0));
-
-					//Draw bars
-					glColor4f(0.7,0.7,0.7,0.7);
-					glBegin(GL_LINES);
-					for(int i=1;i<10;i++)
-					{
-						glVertex2i(0,(i*height/10));
-						glVertex2i(width,(i*height/10));
-					}
-					glEnd();
-					
-					list<ThreadProfile>::iterator it=th->m_sys->profilingData.begin();
-					for(;it!=th->m_sys->profilingData.end();it++)
-						it->plot(1000000/sys->getFrameRate(),&font);
-				}
-				//Call glFlush to offload work on the GPU
-				glFlush();
-				glUseProgram(th->gpu_program);
-				glEnable(GL_BLEND);
-			}
-			profile->accountTime(chronometer.checkpoint());
-		}
-		glDisable(GL_TEXTURE_2D);
-	}
-	catch(LightsparkException& e)
-	{
-		LOG(LOG_ERROR,"Exception in RenderThread " << e.cause);
-		sys->setError(e.cause);
-	}
-	th->commonGLDeinit();
-	return NULL;
-}
-
-void RenderThread::draw()
-{
-	sem_post(&render);
-#ifdef CLOCK_REALTIME
-	clock_gettime(CLOCK_REALTIME,&td);
-	uint32_t diff=timeDiff(ts,td);
-	if(diff>1000)
-	{
-		ts=td;
-		LOG(LOG_NO_INFO,"FPS: " << dec << frameCount);
-		frameCount=0;
-		secsCount++;
-	}
-	else
-		frameCount++;
-#endif
-}
-
-void RenderThread::tick()
-{
-	draw();
-}
-
 void RootMovieClip::setFrameCount(int f)
 {
 	Locker l(mutexFrames);
@@ -2020,31 +955,21 @@ void RootMovieClip::setFrameSize(const lightspark::RECT& f)
 {
 	frameSize=f;
 	assert_and_throw(f.Xmin==0 && f.Ymin==0);
-	sem_post(&sem_valid_size);
 }
 
 lightspark::RECT RootMovieClip::getFrameSize() const
 {
-	//This is a sync semaphore the first time and then a mutex
-	sem_wait(&sem_valid_size);
-	lightspark::RECT ret=frameSize;
-	sem_post(&sem_valid_size);
-	return ret;
+	return frameSize;
 }
 
 void RootMovieClip::setFrameRate(float f)
 {
 	frameRate=f;
-	sem_post(&sem_valid_rate);
 }
 
 float RootMovieClip::getFrameRate() const
 {
-	//This is a sync semaphore the first time and then a mutex
-	sem_wait(&sem_valid_rate);
-	float ret=frameRate;
-	sem_post(&sem_valid_rate);
-	return ret;
+	return frameRate;
 }
 
 void RootMovieClip::addToDictionary(DictionaryTag* r)
@@ -2232,16 +1157,4 @@ void RootMovieClip::setVariableByString(const string& s, ASObject* o)
 	target->setVariableByQName(sub.c_str(),"",o);
 }*/
 
-long lightspark::timeDiff(timespec& s, timespec& d)
-{
-	timespec temp;
-	if ((d.tv_nsec-s.tv_nsec)<0) {
-		temp.tv_sec = d.tv_sec-s.tv_sec-1;
-		temp.tv_nsec = 1000000000+d.tv_nsec-s.tv_nsec;
-	} else {
-		temp.tv_sec = d.tv_sec-s.tv_sec;
-		temp.tv_nsec = d.tv_nsec-s.tv_nsec;
-	}
-	return temp.tv_sec*1000+(temp.tv_nsec)/1000000;
-}
 

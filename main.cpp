@@ -18,25 +18,22 @@
 **************************************************************************/
 
 #include "swf.h"
-#include "tags.h"
-#include "actions.h"
-#include "frame.h"
-#include "geometry.h"
 #include "logger.h"
-#include "streams.h"
-#include "netutils.h"
-#include <time.h>
+#include "parsing/streams.h"
+#include "backends/netutils.h"
 #ifndef WIN32
 #include <sys/resource.h>
 #endif
 #include <iostream>
 #include <fstream>
-#include <list>
 
 #ifdef WIN32
 #include <windows.h>
 #endif
 #include <SDL.h>
+#ifdef WIN32
+#undef main
+#endif
 
 using namespace std;
 using namespace lightspark;
@@ -136,6 +133,7 @@ int main(int argc, char* argv[])
 	cout.exceptions( ios::failbit | ios::badbit);
 	cerr.exceptions( ios::failbit | ios::badbit);
 	ParseThread* pt = new ParseThread(NULL,f);
+	SystemState::staticInit();
 	//NOTE: see SystemState declaration
 	sys=new SystemState(pt);
 
@@ -167,6 +165,7 @@ int main(int argc, char* argv[])
 	delete sys;
 	delete pt;
 
+	SystemState::staticDeinit();
 	SDL_Quit();
 	return 0;
 }

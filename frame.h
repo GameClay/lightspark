@@ -20,17 +20,18 @@
 #ifndef _FRAME_H
 #define _FRAME_H
 
+#include "compat.h"
 #include <list>
 #include "swftypes.h"
 
 namespace lightspark
 {
 
-class RootMovieClip;
 class DisplayListTag;
 class ControlTag;
 class DisplayObject;
 class MovieClip;
+class IFunction;
 
 class PlaceInfo
 {
@@ -52,6 +53,7 @@ public:
 	Frame():script(NULL),initialized(false){}
 	~Frame();
 	void Render();
+	void inputRender();
 	void setScript(IFunction* s){script=s;}
 	void runScript();
 	void init(MovieClip* parent, std::list < std::pair<PlaceInfo, DisplayObject*> >& d);
