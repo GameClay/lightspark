@@ -42,8 +42,8 @@ typedef int pid_t;
 //          to what the standard mandates
 #ifdef _MSC_VER
 #define ATOMIC_INT32(x) __declspec(align(4)) long x
-#define ATOMIC_INCREMENT(x) InterlockedIncrement(&x)
-#define ATOMIC_DECREMENT(x) InterlockedDecrement(&x)
+#define ATOMIC_INCREMENT(x) ls_fetch_and_add(x, 1)
+#define ATOMIC_DECREMENT(x) ls_fetch_and_add(x, -1)
 
 #define TLSDATA __declspec( thread )
 
@@ -88,11 +88,10 @@ long lrint(double f);
 #define TLSDATA __thread
 #define CALLBACK
 
-#include <stdatomic.h>
-#define ATOMIC_INT32(x) std::atomic<int32_t> x
-#define ATOMIC_INCREMENT(x) x.fetch_add(1)
-#define ATOMIC_DECREMENT(x) x.fetch_sub(1)
-
+#define ATOMIC_INT32(x) int32_t x
+#define ATOMIC_INCREMENT(x) ls_fetch_and_add(x, 1)
+#define ATOMIC_DECREMENT(x) ls_fetch_and_add(x, -1)
+#include <stddef.h>
 int aligned_malloc(void **memptr, size_t alignment, size_t size);
 void aligned_free(void *mem);
 #endif
