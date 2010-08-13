@@ -391,6 +391,8 @@ void Dictionary::setVariableByMultiname(const multiname& name, ASObject* o, bool
 		data[Class<ASString>::getInstanceS(name.name_s)]=o;
 	else if(name.name_type==multiname::NAME_INT)
 		data[abstract_i(name.name_i)]=o;
+	else if(name.name_type==multiname::NAME_NUMBER)
+		data[abstract_d(name.name_d)]=o;
 	else
 	{
 		throw UnsupportedException("Unsupported name kind in Dictionary::setVariableByMultiname");
@@ -457,8 +459,52 @@ ASObject* Dictionary::getVariableByMultiname(const multiname& name, bool skip_im
 		//Value not found
 		ret=new Undefined;
 	}
+	else if(name.name_type==multiname::NAME_INT)
+	{
+		//Ok, we need to do the slow lookup on every object and check for === comparison
+		map<ASObject*, ASObject*>::iterator it=data.begin();
+		for(;it!=data.end();it++)
+		{
+			SWFOBJECT_TYPE type=it->first->getObjectType();
+			if(type==T_INTEGER || type==T_UINTEGER || type==T_NUMBER)
+			{
+				if(name.name_i == it->first->toNumber())
+				{
+					//Value found
+					ret=it->second;
+					ret->incRef();
+					return ret;
+				}
+			}
+		}
+		//Value not found
+		ret=new Undefined;
+	}
+	else if(name.name_type==multiname::NAME_NUMBER)
+	{
+		//Ok, we need to do the slow lookup on every object and check for === comparison
+		map<ASObject*, ASObject*>::iterator it=data.begin();
+		for(;it!=data.end();it++)
+		{
+			SWFOBJECT_TYPE type=it->first->getObjectType();
+			if(type==T_INTEGER || type==T_UINTEGER || type==T_NUMBER)
+			{
+				if(name.name_d == it->first->toNumber())
+				{
+					//Value found
+					ret=it->second;
+					ret->incRef();
+					return ret;
+				}
+			}
+		}
+		//Value not found
+		ret=new Undefined;
+	}
 	else
+	{
 		throw UnsupportedException("Unsupported name kind on Dictionary::getVariableByMultiname");
+	}
 
 	return ret;
 }
@@ -473,6 +519,8 @@ bool Dictionary::hasNext(unsigned int& index, bool& out)
 
 bool Dictionary::nextName(unsigned int index, ASObject*& out)
 {
+	assert(index>0);
+	index--;
 	assert_and_throw(implEnable);
 	assert_and_throw(index<data.size());
 	map<ASObject*,ASObject*>::iterator it=data.begin();
@@ -503,7 +551,6 @@ void Proxy::sinit(Class_base* c)
 
 void Proxy::setVariableByMultiname(const multiname& name, ASObject* o, bool enableOverride, ASObject* base)
 {
-	assert_and_throw(implEnable);
 	//If a variable named like this already exist, return that
 	if(hasPropertyByMultiname(name) || !implEnable)
 	{
@@ -538,10 +585,9 @@ void Proxy::setVariableByMultiname(const multiname& name, ASObject* o, bool enab
 
 ASObject* Proxy::getVariableByMultiname(const multiname& name, bool skip_impl, bool enableOverride, ASObject* base)
 {
-	assert_and_throw(!skip_impl);
 	//It seems that various kind of implementation works only with the empty namespace
 	assert_and_throw(name.ns.size()>0);
-	if(name.ns[0].name!="" || hasPropertyByMultiname(name) || !implEnable)
+	if(name.ns[0].name!="" || hasPropertyByMultiname(name) || !implEnable || skip_impl)
 		return ASObject::getVariableByMultiname(name,skip_impl,enableOverride, base);
 
 	//Check if there is a custom getter defined, skipping implementation to avoid recursive calls
@@ -563,4 +609,36 @@ ASObject* Proxy::getVariableByMultiname(const multiname& name, bool skip_impl, b
 	assert_and_throw(ret);
 	implEnable=true;
 	return ret;
+}
+
+bool Proxy::hasNext(unsigned int& index, bool& out)
+{
+	assert_and_throw(implEnable);
+	LOG(LOG_CALLS, "Proxy::hasNext");
+	//Check if there is a custom enumerator, skipping implementation to avoid recursive calls
+	ASObject* o=getVariableByQName("nextNameIndex",flash_proxy,true);
+	assert_and_throw(o && o->getObjectType()==T_FUNCTION);
+	IFunction* f=static_cast<IFunction*>(o);
+	ASObject* arg=abstract_i(index);
+	incRef();
+	ASObject* ret=f->call(this,&arg,1);
+	index=ret->toInt();
+	ret->decRef();
+	out=(index!=0);
+	return true;
+}
+
+bool Proxy::nextName(unsigned int index, ASObject*& out)
+{
+	assert(index>0);
+	assert_and_throw(implEnable);
+	LOG(LOG_CALLS, "Proxy::nextName");
+	//Check if there is a custom enumerator, skipping implementation to avoid recursive calls
+	ASObject* o=getVariableByQName("nextName",flash_proxy,true);
+	assert_and_throw(o && o->getObjectType()==T_FUNCTION);
+	IFunction* f=static_cast<IFunction*>(o);
+	ASObject* arg=abstract_i(index);
+	incRef();
+	out=f->call(this,&arg,1);
+	return true;
 }
