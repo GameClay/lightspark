@@ -17,9 +17,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
 
-#include "abc.h"
+#include "scripting/abc.h"
 #include "frame.h"
-#include "tags.h"
+#include "parsing/tags.h"
 #include <list>
 #include "swf.h"
 #include "compat.h"
@@ -49,6 +49,21 @@ void Frame::runScript()
 {
 	if(script)
 		sys->currentVm->addEvent(NULL,new FunctionEvent(script));
+}
+
+void Frame::inputRender()
+{
+	list <pair<PlaceInfo, DisplayObject*> >::iterator i=displayList.begin();
+
+	//Render objects of this frame;
+	for(;i!=displayList.end();i++)
+	{
+		assert(i->second);
+
+		//Assign object data from current transformation
+		i->second->setMatrix(i->first.Matrix);
+		i->second->inputRender();
+	}
 }
 
 void Frame::Render()

@@ -26,39 +26,28 @@
 #include <fstream>
 #include <vector>
 #include <list>
-#include <map>
 
 #include "logger.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include "exceptions.h"
+#ifndef WIN32
+// TODO: Proper CMake check
 #include <arpa/inet.h>
+#endif
 #include "atomic.h"
 
 namespace lightspark
 {
 
-#define ASFUNCTION(name) \
-	static ASObject* name(ASObject* , ASObject* const* args, const unsigned int argslen)
-#define ASFUNCTIONBODY(c,name) \
-	ASObject* c::name(ASObject* obj, ASObject* const* args, const unsigned int argslen)
-
-#define CLASSBUILDABLE(className) \
-	friend class Class<className>; 
-
-enum SWFOBJECT_TYPE { T_OBJECT=0, T_INTEGER=1, T_NUMBER=2, T_FUNCTION=3, T_UNDEFINED=4, T_NULL=5, T_STRING=6, 
-	T_DEFINABLE=7, T_BOOLEAN=8, T_ARRAY=9, T_CLASS=10, T_QNAME=11, T_NAMESPACE=12, T_UINTEGER=13, T_PROXY=14};
-
 enum STACK_TYPE{STACK_NONE=0,STACK_OBJECT,STACK_INT,STACK_UINT,STACK_NUMBER,STACK_BOOLEAN};
+
+enum TRISTATE { TFALSE=0, TTRUE, TUNDEFINED };
 
 typedef double number_t;
 
 class ASObject;
-class ABCContext;
-class IFunction;
-class Class_base;
-template<class T> class Class;
 struct arrayElem;
 
 class tiny_string
@@ -66,7 +55,7 @@ class tiny_string
 friend std::ostream& operator<<(std::ostream& s, const tiny_string& r);
 private:
 	enum TYPE { READONLY=0, STATIC, DYNAMIC };
-	#define TS_SIZE 256
+	#define TS_SIZE 64
 	char _buf_static[TS_SIZE];
 	char* buf;
 	TYPE type;
@@ -158,22 +147,32 @@ public:
 	}
 	tiny_string& operator+=(const char* s)
 	{
-		assert_and_throw((strlen(buf)+strlen(s)+1)<TS_SIZE);
+		assert_and_throw((strlen(buf)+strlen(s)+1)<=4096);
 		if(type==READONLY)
 		{
 			char* tmp=buf;
 			makePrivateCopy(tmp);
+		}
+		if(type==STATIC && (strlen(buf)+strlen(s)+1)>TS_SIZE)
+		{
+			createBuffer();
+			strcpy(buf,_buf_static);
 		}
 		strcat(buf,s);
 		return *this;
 	}
 	tiny_string& operator+=(const tiny_string& r)
 	{
-		assert_and_throw((strlen(buf)+strlen(r.buf)+1)<TS_SIZE);
+		assert_and_throw((strlen(buf)+strlen(r.buf)+1)<=4096);
 		if(type==READONLY)
 		{
 			char* tmp=buf;
 			makePrivateCopy(tmp);
+		}
+		if(type==STATIC && (strlen(buf)+strlen(r.buf)+1)>TS_SIZE)
+		{
+			createBuffer();
+			strcpy(buf,_buf_static);
 		}
 		strcat(buf,r.buf);
 		return *this;
@@ -378,267 +377,6 @@ struct multiname
 	std::vector<nsNameAndKind> ns;
 	tiny_string qualifiedString() const;
 };
-
-struct obj_var
-{
-	ASObject* var;
-	IFunction* setter;
-	IFunction* getter;
-	obj_var():var(NULL),setter(NULL),getter(NULL){}
-	explicit obj_var(ASObject* v):var(v),setter(NULL),getter(NULL){}
-	explicit obj_var(ASObject* v,IFunction* g,IFunction* s):var(v),setter(s),getter(g){}
-};
-
-class Manager
-{
-friend class ASObject;
-private:
-	std::vector<ASObject*> available;
-	uint32_t maxCache;
-public:
-	Manager(uint32_t m):maxCache(m){}
-template<class T>
-	T* get();
-	void put(ASObject* o);
-};
-
-class objAndLevel
-{
-public:
-	ASObject* obj;
-	int level;
-	objAndLevel(ASObject* o, int l):obj(o),level(l){}
-};
-
-class nameAndLevel
-{
-public:
-	tiny_string name;
-	int level;
-	nameAndLevel(const char* s, int l):name(s),level(l){}
-	nameAndLevel(const tiny_string& n, int l):name(n),level(l){}
-	bool operator<(const nameAndLevel& r) const
-	{
-		if(name==r.name)
-			return level>r.level; //This forces the ordering in descending order
-		else
-			return name<r.name;
-	}
-};
-
-class variables_map
-{
-//ASObject knows how to use its variable_map
-friend class ASObject;
-//ABCContext uses findObjVar when building and linking traits
-friend class ABCContext;
-private:
-	std::multimap<nameAndLevel,std::pair<tiny_string, obj_var> > Variables;
-	typedef std::multimap<nameAndLevel,std::pair<tiny_string, obj_var> >::iterator var_iterator;
-	typedef std::multimap<nameAndLevel,std::pair<tiny_string, obj_var> >::const_iterator const_var_iterator;
-	std::vector<var_iterator> slots_vars;
-	//When findObjVar is invoked with create=true the pointer returned is garanteed to be valid
-	//Level will be modified with the actual level where the object is found
-	obj_var* findObjVar(const tiny_string& name, const tiny_string& ns, int& level, bool create, bool searchPreviusLevels);
-	obj_var* findObjVar(const multiname& mname, int& level, bool create, bool searchPreviusLevels);
-	void killObjVar(const multiname& mname, int level);
-	ASObject* getSlot(unsigned int n)
-	{
-		return slots_vars[n-1]->second.second.var;
-	}
-	void setSlot(unsigned int n,ASObject* o);
-	void initSlot(unsigned int n,int level, const tiny_string& name, const tiny_string& ns);
-	ASObject* getVariableByString(const std::string& name);
-	int size() const
-	{
-		return Variables.size();
-	}
-	tiny_string getNameAt(unsigned int i);
-	obj_var* getValueAt(unsigned int i, int& level);
-	~variables_map();
-public:
-	void dumpVariables();
-	void destroyContents();
-};
-
-class ASObject
-{
-friend class Manager;
-friend class ABCVm;
-friend class ABCContext;
-friend class Class_base; //Needed for forced cleanup
-CLASSBUILDABLE(ASObject);
-protected:
-	//ASObject* asprototype; //HUMM.. ok the prototype, actually class, should be renamed
-	//maps variable name to namespace and var
-	variables_map Variables;
-	ASObject(Manager* m=NULL);
-	ASObject(const ASObject& o);
-	virtual ~ASObject();
-	SWFOBJECT_TYPE type;
-private:
-	int32_t ref_count;
-	Manager* manager;
-	int cur_level;
-	virtual int _maxlevel();
-	Class_base* prototype;
-	obj_var* findGettable(const multiname& name, int& level) DLL_LOCAL;
-	obj_var* findSettable(const multiname& name, int& level) DLL_LOCAL;
-
-public:
-#ifndef NDEBUG
-	//Stuff only used in debugging
-	bool initialized;
-	int getRefCount(){ return ref_count; } //TODO: 'ref_count' not assured to be aligned
-#endif
-	bool implEnable;
-	void setPrototype(Class_base* c);
-	Class_base* getPrototype() const { return prototype; }
-	ASFUNCTION(_constructor);
-	ASFUNCTION(_getPrototype);
-	ASFUNCTION(_setPrototype);
-	ASFUNCTION(_toString);
-	ASFUNCTION(hasOwnProperty);
-	void check() const;
-	void incRef()
-	{
-		//std::cout << "incref " << this << std::endl;
-		ls_fetch_and_add(ref_count, 1);
-		assert(ref_count>0);
-	}
-	void decRef()
-	{
-		//std::cout << "decref " << this << std::endl;
-		assert_and_throw(ref_count>0);
-		ls_fetch_and_add(ref_count, -1);
-		if(ref_count==0) //TODO: 'ref_count' not assured to be aligned
-		{
-			if(manager)
-			{
-				manager->put(this);
-			}
-			else
-			{
-				//Let's make refcount very invalid
-				ref_count=-1024;
-				//std::cout << "delete " << this << std::endl;
-				delete this;
-			}
-		}
-	}
-	void fake_decRef()
-	{
-		ls_fetch_and_add(ref_count, -1);
-	}
-	static void s_incRef(ASObject* o)
-	{
-		o->incRef();
-	}
-	static void s_decRef(ASObject* o)
-	{
-		if(o)
-			o->decRef();
-	}
-	static void s_decRef_safe(ASObject* o,ASObject* o2)
-	{
-		if(o && o!=o2)
-			o->decRef();
-	}
-	virtual ASObject* getVariableByString(const std::string& name);
-	//The enableOverride parameter is set to false in setSuper, getSuper and callSuper
-	virtual objAndLevel getVariableByMultiname(const multiname& name, bool skip_impl=false, bool enableOverride=true );
-	virtual intptr_t getVariableByMultiname_i(const multiname& name);
-	virtual objAndLevel getVariableByQName(const tiny_string& name, const tiny_string& ns, bool skip_impl=false);
-	virtual void setVariableByMultiname_i(const multiname& name, intptr_t value);
-	virtual void setVariableByMultiname(const multiname& name, ASObject* o, bool enableOverride=true);
-	virtual void deleteVariableByMultiname(const multiname& name);
-	virtual void setVariableByQName(const tiny_string& name, const tiny_string& ns, ASObject* o,bool find_back=true, bool skip_impl=false);
-	void setGetterByQName(const tiny_string& name, const tiny_string& ns, IFunction* o);
-	void setSetterByQName(const tiny_string& name, const tiny_string& ns, IFunction* o);
-	bool hasPropertyByMultiname(const multiname& name);
-	bool hasPropertyByQName(const tiny_string& name, const tiny_string& ns);
-	ASObject* getSlot(unsigned int n)
-	{
-		return Variables.getSlot(n);
-	}
-	void setSlot(unsigned int n,ASObject* o)
-	{
-		Variables.setSlot(n,o);
-	}
-	void initSlot(unsigned int n,const tiny_string& name, const tiny_string& ns);
-	virtual unsigned int numVariables();
-	tiny_string getNameAt(int i)
-	{
-		return Variables.getNameAt(i);
-	}
-	ASObject* getValueAt(int i);
-	SWFOBJECT_TYPE getObjectType() const
-	{
-		return type;
-	}
-	virtual tiny_string toString(bool debugMsg=false);
-	virtual int32_t toInt();
-	virtual uint32_t toUInt();
-	virtual double toNumber();
-
-	//Comparison operators
-	virtual bool isEqual(ASObject* r);
-	virtual bool isLess(ASObject* r);
-
-	//Level handling
-	int getLevel() const
-	{
-		return cur_level;
-	}
-	void decLevel()
-	{
-		assert_and_throw(cur_level>0);
-		cur_level--;
-	}
-	void setLevel(int l)
-	{
-		cur_level=l;
-	}
-	void resetLevel();
-
-	//Prototype handling
-	Class_base* getActualPrototype() const;
-	
-	static void sinit(Class_base*){}
-	static void buildTraits(ASObject* o);
-	
-	//TODO: Rework this stuff
-	virtual bool hasNext(unsigned int& index, bool& out);
-	virtual bool nextName(unsigned int index, ASObject*& out);
-	virtual bool nextValue(unsigned int index, ASObject*& out);
-};
-
-inline void Manager::put(ASObject* o)
-{
-	if(available.size()>maxCache)
-		delete o;
-	else
-		available.push_back(o);
-}
-
-template<class T>
-T* Manager::get()
-{
-	if(available.size())
-	{
-		T* ret=static_cast<T*>(available.back());
-		available.pop_back();
-		ret->incRef();
-		//std::cout << "getting[" << name << "] " << ret << std::endl;
-		return ret;
-	}
-	else
-	{
-		T* ret=Class<T>::getInstanceS(this);
-		//std::cout << "newing" << ret << std::endl;
-		return ret;
-	}
-}
 
 class FLOAT 
 {

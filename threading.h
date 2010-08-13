@@ -20,12 +20,16 @@
 #ifndef _THREADING_H
 #define _THREADING_H
 
+#include "compat.h"
+#include <pthread.h>
 #include <semaphore.h>
 #include <stdlib.h>
-#include "compat.h"
+#include <assert.h>
 
 namespace lightspark
 {
+
+typedef void* (*thread_worker)(void*);
 
 class Mutex
 {
@@ -60,7 +64,7 @@ public:
 	void stop() DLL_PUBLIC;
 };
 
-class Condition
+class Semaphore
 {
 private:
 	sem_t sem;
@@ -68,8 +72,8 @@ private:
 	//uint32_t blocked;
 	//uint32_t maxBlocked;
 public:
-	Condition(uint32_t init);
-	~Condition();
+	Semaphore(uint32_t init);
+	~Semaphore();
 	void signal();
 	//void signal_all();
 	void wait();
@@ -80,22 +84,27 @@ class Locker
 {
 private:
 	Mutex& _m;
-	const char* message;
+	bool acquired;
 public:
-	Locker(Mutex& m):_m(m)
+	Locker(Mutex& m):_m(m),acquired(true)
 	{
 		_m.lock();
 	}
 	~Locker()
 	{
-		_m.unlock();
+		if(acquired)
+			_m.unlock();
 	}
 	void lock()
 	{
+		assert(acquired==false);
+		acquired=true;
 		_m.lock();
 	}
 	void unlock()
 	{
+		assert(acquired==true);
+		acquired=false;
 		_m.unlock();
 	}
 };
@@ -106,8 +115,8 @@ class BlockingCircularQueue
 private:
 	T queue[size];
 	//Counting semaphores for the queue
-	Condition freeBuffers;
-	Condition usedBuffers;
+	Semaphore freeBuffers;
+	Semaphore usedBuffers;
 	bool empty;
 	uint32_t bufferHead;
 	uint32_t bufferTail;

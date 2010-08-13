@@ -20,6 +20,7 @@
 #ifndef _TIMER_H
 #define _TIMER_H
 
+#include "compat.h"
 #include <list>
 #include <pthread.h>
 #include <time.h>
@@ -61,7 +62,7 @@ private:
 	pthread_t t;
 	std::list<TimingEvent*> pendingEvents;
 	SystemState* m_sys;
-	volatile ITickJob* currentJob;
+	ITickJob* volatile currentJob;
 	bool stopped;
 	static void* timer_worker(TimerThread*);
 	void insertNewEvent(TimingEvent* e);
