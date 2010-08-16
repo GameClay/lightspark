@@ -242,6 +242,7 @@ SET(LIBSPARK_SOURCES
 		compat.cpp
 		c_interface.cpp
 		frame.cpp
+		lightspark_globals.cpp
 		logger.cpp
 		swf.cpp
 		swftypes.cpp

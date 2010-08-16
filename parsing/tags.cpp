@@ -30,15 +30,12 @@
 #include "logger.h"
 #include "frame.h"
 #include <GL/glew.h>
+#include "lightspark_globals.h"
 
 #undef RGB
 
 using namespace std;
 using namespace lightspark;
-
-extern TLSDATA SystemState* sys;
-extern TLSDATA RenderThread* rt;
-extern TLSDATA ParseThread* pt;
 
 Tag* TagFactory::readTag()
 {

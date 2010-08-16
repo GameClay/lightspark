@@ -26,6 +26,7 @@
 #include "logger.h"
 #include "geometry.h"
 #include "backends/rendering.h"
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
@@ -34,9 +35,6 @@ using namespace lightspark;
 * *        parameters for the shader
 * * \param x Optional x translation
 * * \param y Optional y translation */
-
-extern TLSDATA RenderThread* rt;
-
 
 void GeomShape::Render(int x, int y) const
 {

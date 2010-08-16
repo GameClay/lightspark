@@ -30,6 +30,7 @@
 #include "scripting/class.h"
 #include "backends/netutils.h"
 #include "backends/rendering.h"
+#include "lightspark_globals.h"
 
 #include <GL/glew.h>
 #ifdef ENABLE_CURL
@@ -49,10 +50,6 @@ extern "C" {
 
 using namespace std;
 using namespace lightspark;
-
-extern TLSDATA SystemState* sys;
-extern TLSDATA RenderThread* rt;
-extern TLSDATA ParseThread* pt;
 
 SWF_HEADER::SWF_HEADER(istream& in):valid(false)
 {

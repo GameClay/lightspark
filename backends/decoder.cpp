@@ -25,11 +25,10 @@
 #include "platforms/fastpaths.h"
 #include "swf.h"
 #include "graphics.h"
+#include "lightspark_globals.h"
 
 using namespace lightspark;
 using namespace std;
-
-extern TLSDATA SystemState* sys;
 
 bool VideoDecoder::setSize(uint32_t w, uint32_t h)
 {

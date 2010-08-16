@@ -22,13 +22,10 @@
 #include "swf.h"
 #include "compat.h"
 #include "class.h"
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
-
-extern TLSDATA SystemState* sys;
-extern TLSDATA RenderThread* rt;
-extern TLSDATA ParseThread* pt;
 
 void lightspark::ignore(istream& i, int count);
 

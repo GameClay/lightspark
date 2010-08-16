@@ -43,11 +43,11 @@
 #include "flashxml.h"
 #include "class.h"
 #include "exceptions.h"
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
 
-extern TLSDATA SystemState* sys;
 TLSDATA bool isVmThread=false;
 
 DoABCTag::DoABCTag(RECORDHEADER h, std::istream& in):ControlTag(h)

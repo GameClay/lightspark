@@ -28,6 +28,7 @@
 #include "swftypes.h"
 #include "compat.h"
 #include "exceptions.h"
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
@@ -202,7 +203,6 @@ typed_opcode_handler ABCVm::opcode_table_bool_t[]={
 	{"hasNext2",(void*)ABCVm::hasNext2,ARGS_CONTEXT_INT_INT}
 };
 
-extern TLSDATA SystemState* sys;
 extern TLSDATA Manager* iManager;
 
 void ABCVm::registerFunctions()

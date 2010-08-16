@@ -21,6 +21,7 @@
 #include "input.h"
 #include "swf.h"
 #include "rendering.h"
+#include "lightspark_globals.h"
 
 #include <SDL.h>
 
@@ -30,7 +31,6 @@
 
 using namespace lightspark;
 using namespace std;
-extern TLSDATA lightspark::SystemState* sys DLL_PUBLIC;
 
 InputThread::InputThread(SystemState* s,ENGINE e, void* param):m_sys(s),terminated(false),threaded(false),
 	mutexListeners("Input listeners"),mutexDragged("Input dragged"),curDragged(NULL),lastMouseDownTarget(NULL)

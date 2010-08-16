@@ -31,15 +31,12 @@
 #include "backends/rendering.h"
 #include "scripting/class.h"
 #include "exceptions.h"
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
 
 REGISTER_CLASS_NAME(ASObject);
-
-extern TLSDATA SystemState* sys;
-extern TLSDATA RenderThread* rt;
-extern TLSDATA ParseThread* pt;
 
 tiny_string multiname::qualifiedString() const
 {

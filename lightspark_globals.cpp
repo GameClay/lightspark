@@ -16,32 +16,13 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
-
-#include "flashxml.h"
-#include "swf.h"
-#include "compat.h"
-#include "class.h"
 #include "lightspark_globals.h"
+#include "swf.h"
+#include "backends/rendering.h"
 
-using namespace std;
-using namespace lightspark;
-
-REGISTER_CLASS_NAME(XMLDocument);
-
-void XMLDocument::sinit(Class_base* c)
+namespace lightspark
 {
-	c->setConstructor(Class<IFunction>::getFunction(_constructor));
-	c->super=Class<ASObject>::getClass();
-	c->max_level=c->super->max_level+1;
-}
-
-void XMLDocument::buildTraits(ASObject* o)
-{
-}
-
-ASFUNCTIONBODY(XMLDocument,_constructor)
-{
-//	XMLDocument* th=static_cast<XMLDocument*>(obj);
-	return NULL;
-}
-
+	SystemState* sys = NULL;
+	RenderThread* rt = NULL;
+	ParseThread* pt = NULL;
+};

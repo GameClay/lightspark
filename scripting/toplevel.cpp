@@ -37,11 +37,10 @@
 #include "class.h"
 #include "exceptions.h"
 #include "compat.h"
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
-
-extern TLSDATA SystemState* sys;
 
 REGISTER_CLASS_NAME(Array);
 REGISTER_CLASS_NAME2(ASQName,"QName");

@@ -30,6 +30,7 @@
 #include "compat.h"
 #include "class.h"
 #include "backends/rendering.h"
+#include "lightspark_globals.h"
 
 #include <GL/glew.h>
 #include <fstream>
@@ -37,9 +38,6 @@
 #include <cmath>
 using namespace std;
 using namespace lightspark;
-
-extern TLSDATA SystemState* sys;
-extern TLSDATA RenderThread* rt;
 
 REGISTER_CLASS_NAME(LoaderInfo);
 REGISTER_CLASS_NAME(MovieClip);

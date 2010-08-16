@@ -22,11 +22,10 @@
 #include "swf.h"
 #include "compat.h"
 #include "class.h"
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
-
-extern TLSDATA SystemState* sys;
 
 REGISTER_CLASS_NAME(IEventDispatcher);
 REGISTER_CLASS_NAME(EventDispatcher);

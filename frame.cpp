@@ -24,11 +24,10 @@
 #include "swf.h"
 #include "compat.h"
 #include <GL/glew.h>
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
-
-extern TLSDATA SystemState* sys;
 
 Frame::~Frame()
 {

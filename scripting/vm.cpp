@@ -22,11 +22,10 @@
 #include "actions.h"
 #include "flashdisplay.h"
 #include "compat.h"
+#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;
-
-extern TLSDATA SystemState* sys;
 
 VirtualMachine::VirtualMachine()
 {

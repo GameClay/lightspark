@@ -22,12 +22,12 @@
 #include "compat.h"
 #include <string>
 #include <iostream>
+#include "lightspark_globals.h"
 #ifdef ENABLE_CURL
 #include <curl/curl.h>
 #endif
 
 using namespace lightspark;
-extern TLSDATA SystemState* sys;
 
 Downloader* CurlDownloadManager::download(const tiny_string& u)
 {

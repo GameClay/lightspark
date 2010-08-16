@@ -24,12 +24,10 @@
 
 #include "timer.h"
 #include "compat.h"
+#include "lightspark_globals.h"
 
 using namespace lightspark;
 using namespace std;
-
-extern TLSDATA SystemState* sys;
-extern TLSDATA RenderThread* rt;
 
 uint64_t lightspark::timespecToMsecs(timespec t)
 {

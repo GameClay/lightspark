@@ -26,12 +26,10 @@
 #include "compat.h"
 #include "parsing/streams.h"
 #include "c_interface.h"
+#include "lightspark_globals.h"
+
 using namespace std;
 using namespace lightspark;
-
-TLSDATA DLL_PUBLIC SystemState* sys=NULL;
-TLSDATA DLL_PUBLIC RenderThread* rt=NULL;
-TLSDATA DLL_PUBLIC ParseThread* pt=NULL;
 
 extern int count_reuse;
 extern int count_alloc;

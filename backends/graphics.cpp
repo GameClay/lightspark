@@ -24,11 +24,11 @@
 #include "logger.h"
 #include "exceptions.h"
 #include "backends/rendering.h"
+#include "lightspark_globals.h"
 
 #include <iostream>
 
 using namespace lightspark;
-extern TLSDATA RenderThread* rt;
 
 void lightspark::cleanGLErrors()
 {

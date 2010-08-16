@@ -22,6 +22,7 @@
 #include "rendering.h"
 #include <sstream>
 //#include "swf.h"
+#include "lightspark_globals.h"
 
 #include <SDL.h>
 #include <FTGL/ftgl.h>
@@ -34,8 +35,6 @@
 
 using namespace lightspark;
 using namespace std;
-extern TLSDATA lightspark::SystemState* sys DLL_PUBLIC;
-extern TLSDATA RenderThread* rt;
 
 void RenderThread::wait()
 {

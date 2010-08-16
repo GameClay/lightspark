@@ -19,6 +19,8 @@
 
 #include "plugin.h"
 #include "logger.h"
+#include "lightspark_globals.h"
+
 #define MIME_TYPES_HANDLED  "application/x-shockwave-flash"
 #define FAKE_MIME_TYPE  "application/x-lightspark"
 #define PLUGIN_NAME    "Shockwave Flash"
@@ -27,10 +29,6 @@
 #define PLUGIN_DESCRIPTION "Shockwave Flash 10.0 r423"
 
 using namespace std;
-
-TLSDATA DLL_PUBLIC lightspark::SystemState* sys=NULL;
-TLSDATA DLL_PUBLIC lightspark::RenderThread* rt=NULL;
-TLSDATA DLL_PUBLIC lightspark::ParseThread* pt=NULL;
 
 NPDownloadManager::NPDownloadManager(NPP i):instance(i)
 {
