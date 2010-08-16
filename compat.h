@@ -25,8 +25,8 @@
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
 #include <windows.h>
+#include <winsock2.h>
 #include <intrin.h>
 #undef min
 #undef max
@@ -41,7 +41,7 @@ typedef int pid_t;
 // WINTODO: Hopefully, the MSVC instrinsics are similar enough
 //          to what the standard mandates
 #ifdef _MSC_VER
-#define ATOMIC_INT32(x) __declspec(align(4)) long x
+#define ATOMIC_INT32(x) __declspec(align(4)) int32_t x
 #define ATOMIC_INCREMENT(x) ls_fetch_and_add(x, 1)
 #define ATOMIC_DECREMENT(x) ls_fetch_and_add(x, -1)
 
@@ -64,7 +64,7 @@ inline void aligned_free(void *mem)
 // Emulate these functions
 int round(double f);
 long lrint(double f);
-
+#define isfinite(x) (x == x)
 
 // WINTODO: Should be set by CMake?
 #define PATH_MAX 260

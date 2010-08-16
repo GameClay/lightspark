@@ -17,12 +17,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
 
-#include "abc.h"
+#include "scripting/abc.h"
 
 #include <fstream>
+#ifndef WIN32
 #include <sys/resource.h>
+#endif
 #include "compat.h"
-#include "streams.h"
+#include "parsing/streams.h"
 #include "c_interface.h"
 using namespace std;
 using namespace lightspark;

@@ -36,6 +36,7 @@
 #include "compat.h"
 #include "class.h"
 #include "exceptions.h"
+#include "compat.h"
 
 using namespace std;
 using namespace lightspark;

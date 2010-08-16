@@ -20,14 +20,11 @@
 #include <time.h>
 #ifndef WIN32
 #include <sys/resource.h>
+#include <dlfcn.h>
 #endif
 #include <iostream>
 #include <fstream>
-#include <dlfcn.h>
-
-#ifdef WIN32
-#include <windows.h>
-#endif
+#include "compat.h"
 #include <SDL.h>
 #ifdef WIN32
 #undef main
@@ -42,7 +39,8 @@ using namespace std;
 int main(int argc, char* argv[])
 {
 	lightspark_system_state lightspark_state;
-	
+
+#ifndef WIN32
 	//Load liblightspark
 	const char* liblightsparkname = "../lib/liblightspark.so";
 	void* liblightspark = dlopen(liblightsparkname, RTLD_NOW);
@@ -51,7 +49,8 @@ int main(int argc, char* argv[])
 		cerr << "Unable to load: " << liblightsparkname << endl;
 		exit(-1);
 	}
-	
+
+
 	dlerror(); //Reset error state
 	
 	//Get functions
@@ -63,7 +62,7 @@ int main(int argc, char* argv[])
 	DL_ERROR_CHECK
 	lightspark_api_func lightspark_system_state_defaults = (lightspark_api_func)dlsym(liblightspark, "lightspark_system_state_defaults");
 	DL_ERROR_CHECK
-	
+#endif	
 	//Initialize state structure
 	lightspark_system_state_defaults(&lightspark_state);
 
@@ -155,10 +154,12 @@ int main(int argc, char* argv[])
 	//Cleanup
 	destroy_lightspark(&lightspark_state);
 	
-	SystemState::staticDeinit();
+	// TODO, fix this!
+	//SystemState::staticDeinit();
 	SDL_Quit();
+#ifndef WIN32	
 	dlclose(liblightspark);
-	
+#endif
 	return 0;
 }
 
