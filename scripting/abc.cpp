@@ -43,7 +43,6 @@
 #include "flashxml.h"
 #include "class.h"
 #include "exceptions.h"
-#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;

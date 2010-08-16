@@ -30,7 +30,6 @@
 #include "compat.h"
 #include "class.h"
 #include "backends/rendering.h"
-#include "lightspark_globals.h"
 
 #include <GL/glew.h>
 #include <fstream>

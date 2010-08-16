@@ -21,7 +21,6 @@
 #include "tags.h"
 #include "logger.h"
 #include "swf.h"
-#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;

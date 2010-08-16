@@ -21,7 +21,6 @@
 #include "class.h"
 #include <iostream>
 #include "backends/rendering.h"
-#include "lightspark_globals.h"
 
 using namespace lightspark;
 using namespace std;

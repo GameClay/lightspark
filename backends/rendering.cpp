@@ -21,8 +21,6 @@
 #include "parsing/textfile.h"
 #include "rendering.h"
 #include <sstream>
-//#include "swf.h"
-#include "lightspark_globals.h"
 
 #include <SDL.h>
 #include <FTGL/ftgl.h>

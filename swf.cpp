@@ -30,7 +30,6 @@
 #include "scripting/class.h"
 #include "backends/netutils.h"
 #include "backends/rendering.h"
-#include "lightspark_globals.h"
 
 #include <GL/glew.h>
 #ifdef ENABLE_CURL

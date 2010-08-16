@@ -21,7 +21,6 @@
 #include "input.h"
 #include "swf.h"
 #include "rendering.h"
-#include "lightspark_globals.h"
 
 #include <SDL.h>
 

@@ -28,7 +28,6 @@
 #include "swftypes.h"
 #include "compat.h"
 #include "exceptions.h"
-#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;

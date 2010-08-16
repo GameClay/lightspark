@@ -21,7 +21,6 @@
 #include "swf.h"
 #include "compat.h"
 #include "class.h"
-#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;

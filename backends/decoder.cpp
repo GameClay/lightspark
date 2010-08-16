@@ -25,7 +25,6 @@
 #include "platforms/fastpaths.h"
 #include "swf.h"
 #include "graphics.h"
-#include "lightspark_globals.h"
 
 using namespace lightspark;
 using namespace std;

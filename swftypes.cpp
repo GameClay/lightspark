@@ -31,7 +31,6 @@
 #include "backends/rendering.h"
 #include "scripting/class.h"
 #include "exceptions.h"
-#include "lightspark_globals.h"
 
 using namespace std;
 using namespace lightspark;

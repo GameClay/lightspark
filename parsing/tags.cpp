@@ -30,7 +30,6 @@
 #include "logger.h"
 #include "frame.h"
 #include <GL/glew.h>
-#include "lightspark_globals.h"
 
 #undef RGB
 
