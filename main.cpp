@@ -17,15 +17,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **************************************************************************/
 
-#include "swf.h"
-#include "logger.h"
-#include "parsing/streams.h"
-#include "backends/netutils.h"
+#include <time.h>
 #ifndef WIN32
 #include <sys/resource.h>
 #endif
 #include <iostream>
 #include <fstream>
+#include <dlfcn.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -35,22 +33,41 @@
 #undef main
 #endif
 
-using namespace std;
-using namespace lightspark;
+#include "c_interface.h"
 
-TLSDATA DLL_PUBLIC SystemState* sys;
-TLSDATA DLL_PUBLIC RenderThread* rt=NULL;
-TLSDATA DLL_PUBLIC ParseThread* pt=NULL;
+using namespace std;
+
+#define DL_ERROR_CHECK { const char* dlsym_error = dlerror(); if (dlsym_error) { cerr << "Cannot load symbol create: " << dlsym_error << endl; exit(-1); } dlerror(); }
 
 int main(int argc, char* argv[])
 {
-	char* fileName=NULL;
-	char* url=NULL;
-	char* paramsFileName=NULL;
-	bool useInterpreter=true;
-	bool useJit=false;
-	LOG_LEVEL log_level=LOG_NOT_IMPLEMENTED;
+	lightspark_system_state lightspark_state;
+	
+	//Load liblightspark
+	const char* liblightsparkname = "../lib/liblightspark.so";
+	void* liblightspark = dlopen(liblightsparkname, RTLD_NOW);
+	if(!liblightspark)
+	{
+		cerr << "Unable to load: " << liblightsparkname << endl;
+		exit(-1);
+	}
+	
+	dlerror(); //Reset error state
+	
+	//Get functions
+	lightspark_api_func init_lightspark = (lightspark_api_func)dlsym(liblightspark, "init_lightspark");
+	DL_ERROR_CHECK
+	lightspark_api_func run_lightspark = (lightspark_api_func)dlsym(liblightspark, "run_lightspark");
+	DL_ERROR_CHECK
+	lightspark_api_func destroy_lightspark = (lightspark_api_func)dlsym(liblightspark, "destroy_lightspark");
+	DL_ERROR_CHECK
+	lightspark_api_func lightspark_system_state_defaults = (lightspark_api_func)dlsym(liblightspark, "lightspark_system_state_defaults");
+	DL_ERROR_CHECK
+	
+	//Initialize state structure
+	lightspark_system_state_defaults(&lightspark_state);
 
+	//Parse args
 	for(int i=1;i<argc;i++)
 	{
 		if(strcmp(argv[i],"-u")==0 || 
@@ -59,21 +76,21 @@ int main(int argc, char* argv[])
 			i++;
 			if(i==argc)
 			{
-				fileName=NULL;
+				lightspark_state.filename=NULL;
 				break;
 			}
 
-			url=argv[i];
+			lightspark_state.url=argv[i];
 		}
 		else if(strcmp(argv[i],"-ni")==0 || 
 			strcmp(argv[i],"--disable-interpreter")==0)
 		{
-			useInterpreter=false;
+			lightspark_state.useInterpreter=false;
 		}
 		else if(strcmp(argv[i],"-j")==0 || 
 			strcmp(argv[i],"--enable-jit")==0)
 		{
-			useJit=true;
+			lightspark_state.useJit=true;
 		}
 		else if(strcmp(argv[i],"-l")==0 || 
 			strcmp(argv[i],"--log-level")==0)
@@ -81,11 +98,11 @@ int main(int argc, char* argv[])
 			i++;
 			if(i==argc)
 			{
-				fileName=NULL;
+				lightspark_state.filename=NULL;
 				break;
 			}
 
-			log_level=(LOG_LEVEL)atoi(argv[i]);
+			lightspark_state.log_level=atoi(argv[i]);
 		}
 		else if(strcmp(argv[i],"-p")==0 || 
 			strcmp(argv[i],"--parameters-file")==0)
@@ -93,25 +110,25 @@ int main(int argc, char* argv[])
 			i++;
 			if(i==argc)
 			{
-				fileName=NULL;
+				lightspark_state.filename=NULL;
 				break;
 			}
-			paramsFileName=argv[i];
+			lightspark_state.paramsFileName=argv[i];
 		}
 		else
 		{
 			//No options flag, so set the swf file name
-			if(fileName) //If already set, exit in error status
+			if(lightspark_state.filename) //If already set, exit in error status
 			{
-				fileName=NULL;
+				lightspark_state.filename=NULL;
 				break;
 			}
-			fileName=argv[i];
+			lightspark_state.filename=argv[i];
 		}
 	}
 
 
-	if(fileName==NULL)
+	if(lightspark_state.filename==NULL)
 	{
 		cout << "Usage: " << argv[0] << " [--url|-u http://loader.url/file.swf] [--disable-interpreter|-ni] [--enable-jit|-j] [--log-level|-l 0-4] [--parameters-file|-p params-file] <file.swf>" << endl;
 		exit(-1);
@@ -125,48 +142,23 @@ int main(int argc, char* argv[])
 	//setrlimit(RLIMIT_AS,&rl);
 
 #endif
-
-	Log::initLogging(log_level);
-	zlib_file_filter zf(fileName);
-	istream f(&zf);
-	f.exceptions ( istream::eofbit | istream::failbit | istream::badbit );
-	cout.exceptions( ios::failbit | ios::badbit);
-	cerr.exceptions( ios::failbit | ios::badbit);
-	ParseThread* pt = new ParseThread(NULL,f);
-	SystemState::staticInit();
-	//NOTE: see SystemState declaration
-	sys=new SystemState(pt);
-
-	//Set a bit of SystemState using parameters
-	if(url)
-		sys->setUrl(url);
-
-	//One of useInterpreter or useJit must be enabled
-	if(!(useInterpreter || useJit))
-	{
-		LOG(LOG_ERROR,"No execution model enabled");
-		exit(-1);
-	}
-	sys->useInterpreter=useInterpreter;
-	sys->useJit=useJit;
-	if(paramsFileName)
-		sys->parseParametersFromFile(paramsFileName);
-
-	sys->setOrigin(fileName);
 	
 	SDL_Init ( SDL_INIT_VIDEO |SDL_INIT_EVENTTHREAD );
-	sys->setParamsAndEngine(SDL, NULL);
-	sys->downloadManager=new CurlDownloadManager();
-	//Start the parser
-	sys->addJob(pt);
-
-	sys->wait();
-	pt->wait();
-	delete sys;
-	delete pt;
-
+	
+	//Init
+	init_lightspark(&lightspark_state);
+	
+	//Run
+	//TODO Tick-based running?
+	run_lightspark(&lightspark_state);
+	
+	//Cleanup
+	destroy_lightspark(&lightspark_state);
+	
 	SystemState::staticDeinit();
 	SDL_Quit();
+	dlclose(liblightspark);
+	
 	return 0;
 }
 

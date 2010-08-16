@@ -240,6 +240,7 @@ ENDIF ()
 SET(LIBSPARK_SOURCES 
 		asobject.cpp
 		compat.cpp
+		c_interface.cpp
 		frame.cpp
 		logger.cpp
 		swf.cpp
