@@ -312,6 +312,16 @@ IF(UNIX)
 	INSTALL(TARGETS spark LIBRARY DESTINATION ${PRIVATELIBDIR})
 ENDIF(UNIX)
 
+# Creates a dummy target containing all headers for the benefit of
+# Visual Studio users.
+if( MSVC_IDE OR XCODE )
+  file(GLOB_RECURSE headers *.h)
+  add_library(spark_headers_do_not_build EXCLUDE_FROM_ALL
+    # We need at least one source file:
+    main.cpp
+    ${headers})
+endif()
+
 # lightspark executable target
 IF(COMPILE_LIGHTSPARK)
 	ADD_EXECUTABLE(lightspark main.cpp)
