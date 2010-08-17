@@ -43,16 +43,15 @@ private:
 	LOG_LEVEL cur_level;
 	bool valid;
 	static const char* level_names[];
-	static LOG_LEVEL log_level DLL_PUBLIC;
+	static LOG_LEVEL log_level;
 
 public:
-	Log(LOG_LEVEL l) DLL_PUBLIC;
-	~Log() DLL_PUBLIC;
-	std::ostream& operator()() DLL_PUBLIC;
+	Log(LOG_LEVEL l);
+	~Log();
+	std::ostream& operator()();
 	operator bool() { return valid; }
-	static void initLogging(LOG_LEVEL l) DLL_PUBLIC;
-	static LOG_LEVEL getLevel() DLL_PUBLIC {return log_level;}
-
+	static void initLogging(LOG_LEVEL l);
+	static LOG_LEVEL getLevel() {return log_level;}
 };
 
 #endif

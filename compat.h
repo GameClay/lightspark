@@ -108,12 +108,12 @@ void aligned_free(void *mem);
 
 #if defined _WIN32 || defined __CYGWIN__
 // No DLLs, for now
-#   define DLL_PUBLIC
-#	define DLL_LOCAL
+#   define DLL_PUBLIC(x) __declspec(dllexport) x 
+#	define DLL_LOCAL(x) x
 #else
 	#if __GNUC__ >= 4
-		#define DLL_PUBLIC __attribute__ ((visibility("default")))
-		#define DLL_LOCAL  __attribute__ ((visibility("hidden")))
+		#define DLL_PUBLIC(x) x __attribute__ ((visibility("default")))
+		#define DLL_LOCAL(x) x __attribute__ ((visibility("hidden")))
 	#else
 		#error GCC version less than 4
 	#endif

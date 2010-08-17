@@ -1148,7 +1148,7 @@ std::ostream& operator<<(std::ostream& s, const RGB& r);
 std::ostream& operator<<(std::ostream& s, const RGBA& r);
 std::ostream& operator<<(std::ostream& s, const STRING& r);
 std::ostream& operator<<(std::ostream& s, const multiname& r);
-std::ostream& operator<<(std::ostream& s, const tiny_string& r) DLL_PUBLIC;
+std::ostream& operator<<(std::ostream& s, const tiny_string& r);
 
 std::istream& operator>>(std::istream& s, RECT& v);
 std::istream& operator>>(std::istream& s, CLIPEVENTFLAGS& v);

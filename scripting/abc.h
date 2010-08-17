@@ -413,7 +413,7 @@ public:
 	void getOptionalConstant(const option_detail& opt);
 	multiname* getMultiname(unsigned int m, call_context* th);
 	void buildInstanceTraits(ASObject* obj, int class_index);
-	ABCContext(std::istream& in) DLL_PUBLIC;
+	ABCContext(std::istream& in) ;
 	void exec();
 };
 
@@ -607,7 +607,7 @@ public:
 	llvm::ExecutionEngine* ex;
 	llvm::FunctionPassManager* FPM;
 	llvm::LLVMContext llvm_context;
-	ABCVm(SystemState* s) DLL_PUBLIC;
+	ABCVm(SystemState* s);
 	/**
 		Destroys the VM
 
@@ -616,7 +616,7 @@ public:
 	~ABCVm();
 	static void Run(ABCVm* th);
 	static ASObject* executeFunction(SyntheticFunction* function, call_context* context);
-	bool addEvent(EventDispatcher*,Event*) DLL_PUBLIC;
+	bool addEvent(EventDispatcher*,Event*);
 	int getEventQueueSize();
 	void shutdown();
 	void wait();

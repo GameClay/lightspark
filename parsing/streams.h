@@ -42,11 +42,11 @@ protected:
 	virtual int_type underflow();
 	virtual pos_type seekoff(off_type, std::ios_base::seekdir, std::ios_base::openmode);
 public:
-	zlib_filter() DLL_PUBLIC;
-	~zlib_filter() DLL_PUBLIC;
+	zlib_filter();
+	~zlib_filter();
 };
 
-class DLL_PUBLIC sync_stream: public zlib_filter
+class sync_stream: public zlib_filter
 {
 public:
 	sync_stream();
@@ -68,7 +68,7 @@ private:
 	bool failed;
 };
 
-class DLL_PUBLIC zlib_file_filter:public zlib_filter
+class zlib_file_filter:public zlib_filter
 {
 private:
 	FILE* f;

@@ -61,7 +61,7 @@ public:
 	IThreadJob();
 	virtual ~IThreadJob();
 	void run();
-	void stop() DLL_PUBLIC;
+	void stop();
 };
 
 class Semaphore

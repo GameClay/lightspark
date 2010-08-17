@@ -249,7 +249,7 @@ public:
 class ShutdownEvent: public Event
 {
 public:
-	ShutdownEvent() DLL_PUBLIC;
+	ShutdownEvent();
 	static void sinit(Class_base*);
 	EVENT_TYPE getEventType() { return SHUTDOWN; }
 };
@@ -291,7 +291,7 @@ friend class ABCVm;
 private:
 	ABCContext* context;
 public:
-	ABCContextInitEvent(ABCContext* c) DLL_PUBLIC;
+	ABCContextInitEvent(ABCContext* c);
 	static void sinit(Class_base*);
 	EVENT_TYPE getEventType() { return CONTEXT_INIT; }
 };

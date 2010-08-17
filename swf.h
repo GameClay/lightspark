@@ -208,7 +208,7 @@ private:
 	static int hexToInt(char c);
 	char cookiesFileName[32]; // "/tmp/lightsparkcookiesXXXXXX"
 public:
-	void setUrl(const tiny_string& url) DLL_PUBLIC;
+	void setUrl(const tiny_string& url);
 
 	//Interative analysis flags
 	bool showProfilingData;
@@ -220,21 +220,21 @@ public:
 	std::string errorCause;
 	void setError(const std::string& c);
 	bool shouldTerminate() const;
-	bool isShuttingDown() const DLL_PUBLIC;
+	bool isShuttingDown() const;
 	bool isOnError() const;
-	void setShutdownFlag() DLL_PUBLIC;
+	void setShutdownFlag();
 	void tick();
-	void wait() DLL_PUBLIC;
+	void wait();
 	RenderThread* getRenderThread() const { return renderThread; }
 	InputThread* getInputThread() const { return inputThread; }
-	void setParamsAndEngine(ENGINE e, NPAPI_params* p) DLL_PUBLIC;
-	void setDownloadedPath(const tiny_string& p) DLL_PUBLIC;
-	void enableGnashFallback() DLL_PUBLIC;
+	void setParamsAndEngine(ENGINE e, NPAPI_params* p);
+	void setDownloadedPath(const tiny_string& p);
+	void enableGnashFallback();
 	void needsAVM2(bool n);
 
 	//Be careful, SystemState constructor does some global initialization that must be done
 	//before any other thread gets started
-	SystemState(ParseThread* p) DLL_PUBLIC;
+	SystemState(ParseThread* p);
 	~SystemState();
 	
 	//Performance profiling
@@ -258,10 +258,10 @@ public:
 	bool useInterpreter;
 	bool useJit;
 
-	void parseParametersFromFile(const char* f) DLL_PUBLIC;
-	void parseParametersFromFlashvars(const char* vars) DLL_PUBLIC;
-	void setCookies(const char* c) DLL_PUBLIC;
-	void addJob(IThreadJob* j) DLL_PUBLIC;
+	void parseParametersFromFile(const char* f);
+	void parseParametersFromFlashvars(const char* vars);
+	void setCookies(const char* c);
+	void addJob(IThreadJob* j);
 	void addTick(uint32_t tickTime, ITickJob* job);
 	void addWait(uint32_t waitTime, ITickJob* job);
 	bool removeJob(ITickJob* job);
@@ -269,8 +269,8 @@ public:
 	float getRenderRate();
 
 	//Stuff to be done once for process and not for plugin instance
-	static void staticInit() DLL_PUBLIC;
-	static void staticDeinit() DLL_PUBLIC;
+	static void staticInit();
+	static void staticDeinit();
 
 	DownloadManager* downloadManager;
 
@@ -290,9 +290,9 @@ public:
 	RootMovieClip* root;
 	int version;
 	bool useAVM2;
-	ParseThread(RootMovieClip* r,std::istream& in) DLL_PUBLIC;
+	ParseThread(RootMovieClip* r,std::istream& in);
 	~ParseThread();
-	void wait() DLL_PUBLIC;
+	void wait();
 };
 
 };

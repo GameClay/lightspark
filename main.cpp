@@ -45,11 +45,10 @@ int main(int argc, char* argv[])
 	const char* liblightsparkname = "../lib/liblightspark.so";
 	void* liblightspark = dlopen(liblightsparkname, RTLD_NOW);
 	if(!liblightspark)
-	{
+	{		
 		cerr << "Unable to load: " << liblightsparkname << endl;
 		exit(-1);
 	}
-
 
 	dlerror(); //Reset error state
 	
@@ -62,6 +61,17 @@ int main(int argc, char* argv[])
 	DL_ERROR_CHECK
 	lightspark_api_func lightspark_system_state_defaults = (lightspark_api_func)dlsym(liblightspark, "lightspark_system_state_defaults");
 	DL_ERROR_CHECK
+#else
+	HMODULE liblightspark = LoadLibrary("spark.dll");
+	if (liblightspark == INVALID_HANDLE_VALUE)
+	{
+		cerr << "Unable to load spark.dll" << endl;
+		exit(-1);
+	}
+	lightspark_api_func init_lightspark = (lightspark_api_func)GetProcAddress(liblightspark, "init_lightspark");
+	lightspark_api_func run_lightspark = (lightspark_api_func)GetProcAddress(liblightspark, "run_lightspark");
+	lightspark_api_func destroy_lightspark = (lightspark_api_func)GetProcAddress(liblightspark, "destroy_lightspark");
+	lightspark_api_func lightspark_system_state_defaults = (lightspark_api_func)GetProcAddress(liblightspark, "lightspark_system_state_defaults");
 #endif	
 	//Initialize state structure
 	lightspark_system_state_defaults(&lightspark_state);
