@@ -119,4 +119,5 @@ void destroy_lightspark(lightspark_system_state* lightspark_state)
 	
 	if(sys) delete sys; sys = NULL; //Correct?
 	if(pt) delete pt; pt = NULL;
+	SystemState::staticDeinit();
 }

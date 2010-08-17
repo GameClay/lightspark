@@ -34,45 +34,86 @@
 
 using namespace std;
 
-#define DL_ERROR_CHECK { const char* dlsym_error = dlerror(); if (dlsym_error) { cerr << "Cannot load symbol create: " << dlsym_error << endl; exit(-1); } dlerror(); }
+class SharedLib
+{
+public:
+	SharedLib(const char* lib);
+	~SharedLib();
+
+	void* getSymbol(const char* symbolname);
+private:
+#ifndef WIN32
+	void* libHandle;
+#else
+	HMODULE libHandle;
+#endif
+};
+
+SharedLib::SharedLib(const char* lib)
+{
+#ifndef WIN32
+	liblightspark = dlopen(lib, RTLD_NOW);
+	if(!liblightspark)
+	{		
+		cerr << "Unable to load: " << lib << endl;
+		exit(-1);
+	}
+	dlerror(); //Reset error state
+#else
+	libHandle = LoadLibrary("spark.dll");
+	if (libHandle == NULL)
+	{
+		cerr << "Unable to load " << lib << " " << GetLastError() << endl;
+		exit(-1);
+	}
+#endif
+}
+
+SharedLib::~SharedLib()
+{
+#ifndef WIN32
+	dlclose(libHandle);
+#else
+	if (!FreeLibrary(libHandle))
+	{
+		cerr << "Unable to unload lib: " << GetLastError() << endl;
+	}
+#endif
+}
+
+void* SharedLib::getSymbol(const char* symbolname)
+{
+#ifndef WIN32
+	void* ret = dlsym(libHandle, symbolname);
+	const char* dlsym_error = dlerror(); 
+	if (dlsym_error) 
+	{ 
+		cerr << "Cannot load symbol create: " << dlsym_error << endl; 
+		exit(-1); 
+	} 
+	dlerror();
+	return ret;
+#else
+	void* ret = GetProcAddress(libHandle, symbolname);
+	if (ret == NULL)
+	{
+		cerr << "Unable to get symbol " << symbolname << " " << GetLastError() << endl;
+		exit(-1);
+	}
+	return ret;
+#endif
+}
 
 int main(int argc, char* argv[])
 {
+	SharedLib spark(LIB_SPARK_NAME);
+	lightspark_api_func init_lightspark = (lightspark_api_func) spark.getSymbol("init_lightspark"); 
+	lightspark_api_func run_lightspark = (lightspark_api_func) spark.getSymbol("run_lightspark");
+	lightspark_api_func destroy_lightspark = (lightspark_api_func) spark.getSymbol("destroy_lightspark");
+	lightspark_api_func lightspark_system_state_defaults = (lightspark_api_func) spark.getSymbol("lightspark_system_state_defaults");
+
 	lightspark_system_state lightspark_state;
 
-#ifndef WIN32
-	//Load liblightspark
-	const char* liblightsparkname = "../lib/liblightspark.so";
-	void* liblightspark = dlopen(liblightsparkname, RTLD_NOW);
-	if(!liblightspark)
-	{		
-		cerr << "Unable to load: " << liblightsparkname << endl;
-		exit(-1);
-	}
-
-	dlerror(); //Reset error state
-	
-	//Get functions
-	lightspark_api_func init_lightspark = (lightspark_api_func)dlsym(liblightspark, "init_lightspark");
-	DL_ERROR_CHECK
-	lightspark_api_func run_lightspark = (lightspark_api_func)dlsym(liblightspark, "run_lightspark");
-	DL_ERROR_CHECK
-	lightspark_api_func destroy_lightspark = (lightspark_api_func)dlsym(liblightspark, "destroy_lightspark");
-	DL_ERROR_CHECK
-	lightspark_api_func lightspark_system_state_defaults = (lightspark_api_func)dlsym(liblightspark, "lightspark_system_state_defaults");
-	DL_ERROR_CHECK
-#else
-	HMODULE liblightspark = LoadLibrary("spark.dll");
-	if (liblightspark == INVALID_HANDLE_VALUE)
-	{
-		cerr << "Unable to load spark.dll" << endl;
-		exit(-1);
-	}
-	lightspark_api_func init_lightspark = (lightspark_api_func)GetProcAddress(liblightspark, "init_lightspark");
-	lightspark_api_func run_lightspark = (lightspark_api_func)GetProcAddress(liblightspark, "run_lightspark");
-	lightspark_api_func destroy_lightspark = (lightspark_api_func)GetProcAddress(liblightspark, "destroy_lightspark");
-	lightspark_api_func lightspark_system_state_defaults = (lightspark_api_func)GetProcAddress(liblightspark, "lightspark_system_state_defaults");
-#endif	
 	//Initialize state structure
 	lightspark_system_state_defaults(&lightspark_state);
 
@@ -164,12 +205,8 @@ int main(int argc, char* argv[])
 	//Cleanup
 	destroy_lightspark(&lightspark_state);
 	
-	// TODO, fix this!
-	//SystemState::staticDeinit();
 	SDL_Quit();
-#ifndef WIN32	
-	dlclose(liblightspark);
-#endif
+
 	return 0;
 }
 

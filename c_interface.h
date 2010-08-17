@@ -22,6 +22,12 @@
 
 #include "compat.h"
 
+#ifndef WIN32
+#define LIB_SPARK_NAME "../lib/liblightspark.so"
+#else
+#define LIB_SPARK_NAME "spark.dll"
+#endif
+
 struct lightspark_system_state
 {
 	int log_level;
