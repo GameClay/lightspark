@@ -148,8 +148,13 @@ ASObject* ABCVm::checkfilter(ASObject* o)
 
 ASObject* ABCVm::coerce_s(ASObject* o)
 {
-	LOG(LOG_NOT_IMPLEMENTED, "coerce_s" );
-	return o;
+	ASObject* ret = o;
+	if(o->getObjectType()!=T_STRING)
+	{
+		ret = Class<ASString>::getInstanceS(o->toString(false));
+		o->decRef();
+	}
+	return ret;
 }
 
 void ABCVm::coerce(call_context* th, int n)
