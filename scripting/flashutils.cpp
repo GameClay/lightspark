@@ -552,7 +552,9 @@ tiny_string Dictionary::toString(bool debugMsg)
 	map<ASObject*,ASObject*>::iterator it=data.begin();
 	while(it != data.end())
 	{
-		retstr << ",{" << it->first->toString() << "," << it->second->toString() << "}";
+		if(it != data.begin())
+			retstr << ", ";
+		retstr << "{" << it->first->toString() << ", " << it->second->toString() << "}";
 		it++;
 	}
 	retstr << "}";
