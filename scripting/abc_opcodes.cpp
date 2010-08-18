@@ -21,6 +21,7 @@
 #include <limits>
 #include "class.h"
 #include "exceptions.h"
+#include <sstream>
 
 using namespace std;
 using namespace lightspark;
@@ -397,13 +398,16 @@ ASObject* ABCVm::getProperty(ASObject* obj, multiname* name)
 	
 	if(ret==NULL)
 	{
+		std::stringstream debug_info;
+		if(!getVm()->debug_stack.empty())
+			debug_info << endl << "\tLine: " << getVm()->debug_stack.back().first << " -- File: '" << getVm()->debug_stack.back().second << "'";
 		if(obj->prototype)
 		{
-			LOG(LOG_NOT_IMPLEMENTED,"Property not found " << *name << " on type " << obj->prototype->class_name);
+			LOG(LOG_NOT_IMPLEMENTED,"Property not found " << *name << " on type " << obj->prototype->class_name << debug_info.str());
 		}
 		else
 		{
-			LOG(LOG_NOT_IMPLEMENTED,"Property not found " << *name);
+			LOG(LOG_NOT_IMPLEMENTED,"Property not found " << *name << debug_info);
 		}
 		return new Undefined;
 	}

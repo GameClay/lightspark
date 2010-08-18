@@ -364,6 +364,12 @@ struct method_body_info
 	std::vector<traits_info> traits;
 };
 
+typedef std::pair<u30, tiny_string> debug_stack_entry;
+inline debug_stack_entry make_debug_stack_entry(u30 line, const tiny_string& file)
+{
+	return std::make_pair(line, file);
+}
+
 struct opcode_handler
 {
 	const char* name;
@@ -630,6 +636,7 @@ public:
 
 	static bool strictEqualImpl(ASObject*, ASObject*);
 
+	std::vector<debug_stack_entry> debug_stack;
 };
 
 class DoABCTag: public ControlTag

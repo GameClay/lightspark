@@ -1341,7 +1341,10 @@ void ABCVm::Run(ABCVm* th)
 		}
 		catch(LightsparkException& e)
 		{
-			LOG(LOG_ERROR,"Error in VM " << e.cause);
+			std::stringstream debug_info;
+			if(!th->debug_stack.empty())
+				debug_info << endl << "\tLine: " << th->debug_stack.back().first << " -- File: '" << th->debug_stack.back().second << "'";
+			LOG(LOG_ERROR,"Error in VM " << e.cause << debug_info.str());
 			th->m_sys->setError(e.cause);
 			bailOut=true;
 		}

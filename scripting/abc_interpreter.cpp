@@ -1247,6 +1247,9 @@ ASObject* ABCVm::executeFunction(SyntheticFunction* function, call_context* cont
 				LOG(LOG_CALLS, "debugline" );
 				u30 t;
 				code >> t;
+				if(getVm()->debug_stack.empty())
+					getVm()->debug_stack.push_back(make_debug_stack_entry(0, ""));
+				getVm()->debug_stack.back().first = t;
 				break;
 			}
 			case 0xf1:
@@ -1255,6 +1258,9 @@ ASObject* ABCVm::executeFunction(SyntheticFunction* function, call_context* cont
 				LOG(LOG_CALLS, "debugfile" );
 				u30 t;
 				code >> t;
+				if(getVm()->debug_stack.empty())
+					getVm()->debug_stack.push_back(make_debug_stack_entry(0, ""));
+				getVm()->debug_stack.back().second = context->context->getString(t);
 				break;
 			}
 			default:
