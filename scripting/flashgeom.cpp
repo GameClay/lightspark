@@ -255,10 +255,37 @@ void Point::sinit(Class_base* c)
 	c->setConstructor(Class<IFunction>::getFunction(_constructor));
 	c->setGetterByQName("x","",Class<IFunction>::getFunction(_getX));
 	c->setGetterByQName("y","",Class<IFunction>::getFunction(_getY));
+	c->setGetterByQName("length","",Class<IFunction>::getFunction(_getlength));
+	c->setSetterByQName("x","",Class<IFunction>::getFunction(_setX));
+	c->setSetterByQName("y","",Class<IFunction>::getFunction(_setY));
+	c->setVariableByQName("interpolate","",Class<IFunction>::getFunction(interpolate));
+	c->setVariableByQName("distance","",Class<IFunction>::getFunction(distance));
+	c->setVariableByQName("add","",Class<IFunction>::getFunction(add));
+	c->setVariableByQName("subtract","",Class<IFunction>::getFunction(subtract));
+	c->setVariableByQName("clone","",Class<IFunction>::getFunction(clone));
+	c->setVariableByQName("equals","",Class<IFunction>::getFunction(equals));
+	c->setVariableByQName("normalize","",Class<IFunction>::getFunction(normalize));
+	c->setVariableByQName("offset","",Class<IFunction>::getFunction(offset));
+	c->setVariableByQName("polar","",Class<IFunction>::getFunction(polar));
 }
 
 void Point::buildTraits(ASObject* o)
 {
+}
+
+tiny_string Point::toString(bool debugMsg)
+{
+	assert_and_throw(implEnable);
+	
+	char buf[512];
+	snprintf(buf,512,"(a=%f, b=%f)",x,y);
+	
+	return tiny_string(buf);
+}
+
+number_t Point::len() const
+{
+	return sqrt(x*x + y*y);
 }
 
 ASFUNCTIONBODY(Point,_constructor)
@@ -282,6 +309,125 @@ ASFUNCTIONBODY(Point,_getY)
 {
 	Point* th=static_cast<Point*>(obj);
 	return abstract_d(th->y);
+}
+
+ASFUNCTIONBODY(Point,_setX)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen==1);
+	th->x = args[0]->toNumber();
+	return NULL;
+}
+
+ASFUNCTIONBODY(Point,_setY)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen==1);
+	th->y = args[0]->toNumber();
+	return NULL;
+}
+
+ASFUNCTIONBODY(Point,_getlength)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen==0);
+	return abstract_d(th->len());
+}
+
+ASFUNCTIONBODY(Point,interpolate)
+{
+	assert_and_throw(argslen==3);
+	Point* pt1=static_cast<Point*>(args[0]);
+	Point* pt2=static_cast<Point*>(args[1]);
+	number_t f=args[2]->toNumber();
+	Point* ret=Class<Point>::getInstanceS();
+	ret->x = pt1->x + pt2->x * f;
+	ret->y = pt1->y + pt2->y * f;
+	return ret;
+}
+
+ASFUNCTIONBODY(Point,distance)
+{
+	assert_and_throw(argslen==2);
+	Point* pt1=static_cast<Point*>(args[0]);
+	Point* pt2=static_cast<Point*>(args[1]);
+	Point temp(pt2->x - pt1->x, pt2->y - pt1->x);
+	return abstract_d(temp.len());
+}
+
+ASFUNCTIONBODY(Point,add)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen==1);
+	Point* v=static_cast<Point*>(args[0]);
+	Point* ret=Class<Point>::getInstanceS();
+	ret->x = th->x + v->x;
+	ret->y = th->y + v->y;
+	return ret;
+}
+
+ASFUNCTIONBODY(Point,subtract)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen==1);
+	Point* v=static_cast<Point*>(args[0]);
+	Point* ret=Class<Point>::getInstanceS();
+	ret->x = th->x - v->x;
+	ret->y = th->y - v->y;
+	return ret;
+}
+
+ASFUNCTIONBODY(Point,clone)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen==0);
+	Point* ret=Class<Point>::getInstanceS();
+	ret->x = th->x;
+	ret->y = th->y;
+	return ret;
+}
+
+ASFUNCTIONBODY(Point,equals)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen==1);
+	Point* toCompare=static_cast<Point*>(args[0]);
+	return abstract_b((th->x == toCompare->x) & (th->y == toCompare->y));
+}
+
+ASFUNCTIONBODY(Point,normalize)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen<2);
+	number_t thickness = argslen > 0 ? args[0]->toNumber() : 1.0;
+	number_t len = th->len();
+	//What if len == 0?
+	th->x = th->x * thickness / len;
+	th->y = th->y * thickness / len;
+	return NULL;
+}
+
+ASFUNCTIONBODY(Point,offset)
+{
+	Point* th=static_cast<Point*>(obj);
+	assert_and_throw(argslen==2);
+	number_t dx = args[0]->toNumber();
+	number_t dy = args[1]->toNumber();
+	Point* ret=Class<Point>::getInstanceS();
+	ret->x = th->x + dx;
+	ret->y = th->y + dy;
+	return ret;
+}
+
+ASFUNCTIONBODY(Point,polar)
+{
+	assert_and_throw(argslen==2);
+	number_t len = args[0]->toNumber();
+	number_t angle = args[1]->toNumber();
+	Point* ret=Class<Point>::getInstanceS();
+	ret->x = len * cos(angle);
+	ret->y = len * sin(angle);
+	return ret;
 }
 
 void Transform::sinit(Class_base* c)

@@ -55,12 +55,27 @@ class Point: public ASObject
 private:
 	number_t x,y;
 public:
-	Point():x(0),y(0){}
+	Point(number_t _x = 0, number_t _y = 0):x(_x),y(_y){}
 	static void sinit(Class_base* c);
 	static void buildTraits(ASObject* o);
+	tiny_string toString(bool debugMsg=false);
 	ASFUNCTION(_constructor);
 	ASFUNCTION(_getX);
 	ASFUNCTION(_getY);
+	ASFUNCTION(_setX);
+	ASFUNCTION(_setY);
+	ASFUNCTION(_getlength);
+	ASFUNCTION(interpolate);
+	ASFUNCTION(distance);
+	ASFUNCTION(add);
+	ASFUNCTION(subtract);
+	ASFUNCTION(clone);
+	ASFUNCTION(equals);
+	ASFUNCTION(normalize);
+	ASFUNCTION(offset);
+	ASFUNCTION(polar);
+	
+	number_t len() const;
 };
 
 class ColorTransform: public ASObject
