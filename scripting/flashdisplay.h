@@ -420,6 +420,9 @@ public:
 	
 	ASFUNCTION(_constructor);
 	
+	//Methods
+	ASFUNCTION(identity);
+	
 	//Properties
 	ASFUNCTION(_get_a);
 	ASFUNCTION(_get_b);
