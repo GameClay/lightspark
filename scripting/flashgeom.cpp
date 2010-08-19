@@ -327,13 +327,7 @@ ASFUNCTIONBODY(Matrix,_constructor)
 	
 	Matrix* th=static_cast<Matrix*>(obj);
 	
-	//Identity matrix
-	if(argslen!=6)
-	{
-		th->a = 1.0; th->c = 0.0; th->tx = 0.0;
-		th->b = 0.0; th->d = 0.0; th->ty = 0.0;
-	}
-	else
+	if(argslen==6)
 	{
 		//Initialize from args
 		th->a = args[0]->toNumber();
