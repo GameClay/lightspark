@@ -735,6 +735,7 @@ public:
 	ASFUNCTION(abs);
 	ASFUNCTION(sin);
 	ASFUNCTION(cos);
+	ASFUNCTION(tan);
 	ASFUNCTION(floor);
 	ASFUNCTION(ceil);
 	ASFUNCTION(round);

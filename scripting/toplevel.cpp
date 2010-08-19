@@ -1623,6 +1623,7 @@ void Math::sinit(Class_base* c)
 	c->setVariableByQName("abs","",Class<IFunction>::getFunction(abs));
 	c->setVariableByQName("sin","",Class<IFunction>::getFunction(sin));
 	c->setVariableByQName("cos","",Class<IFunction>::getFunction(cos));
+	c->setVariableByQName("tan","",Class<IFunction>::getFunction(tan));
 	c->setVariableByQName("log","",Class<IFunction>::getFunction(log));
 	c->setVariableByQName("floor","",Class<IFunction>::getFunction(floor));
 	c->setVariableByQName("ceil","",Class<IFunction>::getFunction(ceil));
@@ -1665,6 +1666,14 @@ ASFUNCTIONBODY(Math,sin)
 	double n=args[0]->toNumber();
 	return abstract_d(::sin(n));
 }
+
+ASFUNCTIONBODY(Math,tan)
+{
+	//Angle is in radians
+	double n=args[0]->toNumber();
+	return abstract_d(::tan(n));
+}
+
 
 ASFUNCTIONBODY(Math,abs)
 {
