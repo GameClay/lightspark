@@ -418,6 +418,8 @@ public:
 	//Overloads
 	tiny_string toString(bool debugMsg=false);
 	
+	ASFUNCTION(_constructor);
+	
 	//Properties
 	ASFUNCTION(_get_a);
 	ASFUNCTION(_get_b);

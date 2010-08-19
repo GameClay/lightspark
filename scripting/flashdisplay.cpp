@@ -2089,8 +2089,7 @@ void Bitmap::sinit(Class_base* c)
 
 void Matrix::sinit(Class_base* c)
 {
-//	c->constructor=Class<IFunction>::getFunction(_constructor);
-	c->setConstructor(NULL);
+	c->setConstructor(Class<IFunction>::getFunction(_constructor));
 	
 	//Properties
 	c->setGetterByQName("a","",Class<IFunction>::getFunction(_get_a));
@@ -2110,6 +2109,32 @@ void Matrix::sinit(Class_base* c)
 	//Methods
 }
 
+ASFUNCTIONBODY(Matrix,_constructor)
+{
+	ASObject::_constructor(obj,NULL,0);
+	
+	Matrix* th=static_cast<Matrix*>(obj);
+	
+	//Identity matrix
+	if(argslen!=6)
+	{
+		th->a = 1.0; th->c = 0.0; th->tx = 0.0;
+		th->b = 0.0; th->d = 0.0; th->ty = 0.0;
+	}
+	else
+	{
+		//Initialize from args
+		th->a = args[0]->toNumber();
+		th->b = args[0]->toNumber();
+		th->c = args[0]->toNumber();
+		th->d = args[0]->toNumber();
+		th->tx = args[0]->toNumber();
+		th->ty = args[0]->toNumber();
+	}
+
+	return NULL;
+}
+
 void Matrix::buildTraits(ASObject* o)
 {
 }
@@ -2122,7 +2147,7 @@ tiny_string Matrix::toString(bool debugMsg)
 	snprintf(buf,128,"(a=%f, b=%f, c=%f, d=%f, tx=%f, ty=%f)",
 		a, b, c, d, tx, ty);
 	
-	return buf;
+	return tiny_string(buf);
 }
 
 ASFUNCTIONBODY(Matrix,_get_a)
