@@ -27,6 +27,8 @@
 using namespace std;
 using namespace lightspark;
 
+SET_NAMESPACE("flash.utils");
+
 REGISTER_CLASS_NAME(ByteArray);
 REGISTER_CLASS_NAME(Timer);
 REGISTER_CLASS_NAME(Dictionary);
@@ -124,12 +126,9 @@ ASFUNCTIONBODY(ByteArray,readBytes)
 
 ASObject* ByteArray::getVariableByMultiname(const multiname& name, bool skip_impl, bool enableOverride, ASObject* base)
 {
-	assert_and_throw(!skip_impl);
 	assert_and_throw(implEnable);
-	//It seems that various kind of implementation works only with the empty namespace
-	assert_and_throw(name.ns.size()>0 && name.ns[0].name=="");
 	unsigned int index=0;
-	if(!Array::isValidMultiname(name,index))
+	if(skip_impl || !Array::isValidMultiname(name,index))
 		return ASObject::getVariableByMultiname(name,skip_impl,enableOverride,base);
 
 	assert_and_throw(index<len);

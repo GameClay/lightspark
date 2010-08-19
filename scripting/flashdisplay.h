@@ -60,6 +60,7 @@ protected:
 	bool visible;
 public:
 	int Depth;
+	tiny_string name;
 	UI16 CharacterId;
 	CXFORMWITHALPHA ColorTransform;
 	UI16 Ratio;
@@ -123,12 +124,12 @@ public:
 	ASFUNCTION(_setHeight);
 	ASFUNCTION(_getRotation);
 	ASFUNCTION(_getName);
+	ASFUNCTION(_setName);
 	ASFUNCTION(_getParent);
 	ASFUNCTION(_getRoot);
 	ASFUNCTION(_getBlendMode);
 	ASFUNCTION(_getScale9Grid);
 	ASFUNCTION(_setRotation);
-	ASFUNCTION(_setName);
 	ASFUNCTION(localToGlobal);
 };
 
@@ -175,6 +176,7 @@ public:
 	ASFUNCTION(addChildAt);
 	ASFUNCTION(getChildIndex);
 	ASFUNCTION(getChildAt);
+	ASFUNCTION(getChildByName);
 	ASFUNCTION(contains);
 };
 
@@ -315,14 +317,14 @@ public:
 
 class MovieClip: public Sprite
 {
-//SERIOUS_TODO: add synchronization
-friend class ParseThread;
+private:
+	uint32_t totalFrames;
 protected:
 	uint32_t framesLoaded;
-	uint32_t totalFrames;
 	std::list<std::pair<PlaceInfo, DisplayObject*> > displayList;
 	Frame* cur_frame;
 	void bootstrap();
+	std::vector<IFunction*> frameScripts;
 public:
 	std::vector<Frame> frames;
 	RunState state;
@@ -344,6 +346,7 @@ public:
 
 	void advanceFrame();
 	uint32_t getFrameIdByLabel(const tiny_string& l) const;
+	void setTotalFrames(uint32_t t);
 
 	//DisplayObject interface
 	void Render();
@@ -363,10 +366,6 @@ public:
 
 class Stage: public DisplayObjectContainer
 {
-private:
-	//Taken directly from SystemState
-	//uintptr_t width;
-	//uintptr_t height;
 public:
 	Stage();
 	static void sinit(Class_base* c);
@@ -406,6 +405,7 @@ class Bitmap: public DisplayObject
 {
 public:
 	static void sinit(Class_base* c);
+	bool getBounds(number_t& xmin, number_t& xmax, number_t& ymin, number_t& ymax) const;
 };
 
 };

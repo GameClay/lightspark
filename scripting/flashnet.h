@@ -36,7 +36,7 @@ class URLRequest: public ASObject
 friend class Loader;
 friend class URLLoader;
 private:
-	tiny_string url; 
+	tiny_string url;
 public:
 	URLRequest();
 	static void sinit(Class_base*);
@@ -77,8 +77,9 @@ class URLLoader: public EventDispatcher, public IThreadJob
 private:
 	tiny_string dataFormat;
 	tiny_string url;
+	bool isLocal;
 	ASObject* data;
-	CurlDownloader* downloader;
+	Downloader* downloader;
 	volatile bool executingAbort;
 	void execute();
 	void threadAbort();
@@ -97,7 +98,10 @@ class NetConnection: public EventDispatcher
 {
 friend class NetStream;
 private:
+	//The connection is to a flash media server
 	bool isFMS;
+	//The connection is to a local file
+	bool isLocal;
 public:
 	NetConnection();
 	static void sinit(Class_base*);

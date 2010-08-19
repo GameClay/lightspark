@@ -41,6 +41,8 @@ using namespace lightspark;
 extern TLSDATA SystemState* sys;
 extern TLSDATA RenderThread* rt;
 
+SET_NAMESPACE("flash.display");
+
 REGISTER_CLASS_NAME(LoaderInfo);
 REGISTER_CLASS_NAME(MovieClip);
 REGISTER_CLASS_NAME(DisplayObject);
@@ -439,18 +441,26 @@ void MovieClip::sinit(Class_base* c)
 	c->setVariableByQName("stop","",Class<IFunction>::getFunction(stop));
 	c->setVariableByQName("gotoAndStop","",Class<IFunction>::getFunction(gotoAndStop));
 	c->setVariableByQName("nextFrame","",Class<IFunction>::getFunction(nextFrame));
+	c->setVariableByQName("addFrameScript","",Class<IFunction>::getFunction(addFrameScript));
 }
 
 void MovieClip::buildTraits(ASObject* o)
 {
 }
 
-MovieClip::MovieClip():framesLoaded(1),totalFrames(1),cur_frame(NULL)
+MovieClip::MovieClip():totalFrames(1),framesLoaded(1),cur_frame(NULL)
 {
 	//It's ok to initialize here framesLoaded=1, as it is valid and empty
 	//RooMovieClip() will reset it, as stuff loaded dynamically needs frames to be committed
 	frames.push_back(Frame());
 	cur_frame=&frames.back();
+}
+
+void MovieClip::setTotalFrames(uint32_t t)
+{
+	assert(totalFrames==1);
+	totalFrames=t;
+	frameScripts.resize(totalFrames,NULL);
 }
 
 void MovieClip::addToFrame(DisplayListTag* t)
@@ -470,27 +480,21 @@ uint32_t MovieClip::getFrameIdByLabel(const tiny_string& l) const
 
 ASFUNCTIONBODY(MovieClip,addFrameScript)
 {
-	throw UnsupportedException("MovieClip::addFrameScript");
-/*	MovieClip* th=static_cast<MovieClip*>(obj->implementation);
-	if(args->size()%2)
+	MovieClip* th=Class<MovieClip>::cast(obj);
+	assert_and_throw(argslen==2);
+	uint32_t frame=args[0]->toInt();
+	if(frame>=th->totalFrames)
+		return NULL;
+	if(args[1]->getObjectType()!=T_FUNCTION)
 	{
-		LOG(LOG_ERROR,"Invalid arguments to addFrameScript");
-		abort();
+		LOG(LOG_ERROR,"Not a function");
+		return NULL;
 	}
-	for(int i=0;i<args->size();i+=2)
-	{
-		int f=args->at(i+0)->toInt();
-		IFunction* g=args->at(i+1)->toFunction();
-
-		//Should wait for frames to be received
-		if(f>=framesLoaded)
-		{
-			LOG(LOG_ERROR,"Invalid frame number passed to addFrameScript");
-			abort();
-		}
-
-		th->frames[f].setScript(g);
-	}*/
+	IFunction* f=static_cast<IFunction*>(args[1]);
+	f->incRef();
+	
+	assert(th->frameScripts.size()==th->totalFrames);
+	th->frameScripts[frame]=f;
 	return NULL;
 }
 
@@ -578,11 +582,10 @@ ASFUNCTIONBODY(MovieClip,_getCurrentFrame)
 
 ASFUNCTIONBODY(MovieClip,_constructor)
 {
-	//MovieClip* th=static_cast<MovieClip*>(obj->implementation);
+	//MovieClip* th=Class<MovieClip>::cast(obj);
 	Sprite::_constructor(obj,NULL,0);
 /*	th->setVariableByQName("swapDepths","",Class<IFunction>::getFunction(swapDepths));
-	th->setVariableByQName("createEmptyMovieClip","",Class<IFunction>::getFunction(createEmptyMovieClip));
-	th->setVariableByQName("addFrameScript","",Class<IFunction>::getFunction(addFrameScript));*/
+	th->setVariableByQName("createEmptyMovieClip","",Class<IFunction>::getFunction(createEmptyMovieClip));*/
 	return NULL;
 }
 
@@ -604,6 +607,8 @@ void MovieClip::advanceFrame()
 		if(!state.stop_FP && framesLoaded>0)
 			state.next_FP=imin(state.FP+1,framesLoaded-1);
 		state.explicit_FP=false;
+		if(frameScripts[state.FP])
+			getVm()->addEvent(NULL,new FunctionEvent(frameScripts[state.FP]));
 	}
 
 }
@@ -643,10 +648,6 @@ void MovieClip::Render()
 	if(framesLoaded)
 	{
 		assert_and_throw(curFP<framesLoaded);
-
-		if(!state.stop_FP)
-			frames[curFP].runScript();
-
 		frames[curFP].Render();
 	}
 
@@ -678,10 +679,6 @@ void MovieClip::inputRender()
 	if(framesLoaded)
 	{
 		assert_and_throw(curFP<framesLoaded);
-
-		if(!state.stop_FP)
-			frames[curFP].runScript();
-
 		frames[curFP].inputRender();
 	}
 
@@ -860,6 +857,7 @@ void DisplayObject::sinit(Class_base* c)
 	c->setGetterByQName("rotation","",Class<IFunction>::getFunction(_getRotation));
 	c->setSetterByQName("rotation","",Class<IFunction>::getFunction(_setRotation));
 	c->setGetterByQName("name","",Class<IFunction>::getFunction(_getName));
+	c->setSetterByQName("name","",Class<IFunction>::getFunction(_setName));
 	c->setGetterByQName("parent","",Class<IFunction>::getFunction(_getParent));
 	c->setGetterByQName("root","",Class<IFunction>::getFunction(_getRoot));
 	c->setGetterByQName("blendMode","",Class<IFunction>::getFunction(_getBlendMode));
@@ -869,7 +867,6 @@ void DisplayObject::sinit(Class_base* c)
 	c->setGetterByQName("stage","",Class<IFunction>::getFunction(_getStage));
 	c->setVariableByQName("getBounds","",Class<IFunction>::getFunction(_getBounds));
 	c->setVariableByQName("localToGlobal","",Class<IFunction>::getFunction(localToGlobal));
-	c->setSetterByQName("name","",Class<IFunction>::getFunction(_setName));
 	c->setGetterByQName("mask","",Class<IFunction>::getFunction(_getMask));
 	c->setSetterByQName("mask","",Class<IFunction>::getFunction(undefinedFunction));
 	c->setGetterByQName("alpha","",Class<IFunction>::getFunction(_getAlpha));
@@ -1157,14 +1154,16 @@ ASFUNCTIONBODY(DisplayObject,_setRotation)
 
 ASFUNCTIONBODY(DisplayObject,_setName)
 {
-	//DisplayObject* th=static_cast<DisplayObject*>(obj);
+	DisplayObject* th=static_cast<DisplayObject*>(obj);
+	assert_and_throw(argslen==1);
+	th->name=args[0]->toString();
 	return NULL;
 }
 
 ASFUNCTIONBODY(DisplayObject,_getName)
 {
-	//DisplayObject* th=static_cast<DisplayObject*>(obj);
-	return new Undefined;
+	DisplayObject* th=static_cast<DisplayObject*>(obj);
+	return Class<ASString>::getInstanceS(th->name);
 }
 
 ASFUNCTIONBODY(DisplayObject,_getParent)
@@ -1299,6 +1298,7 @@ void DisplayObjectContainer::sinit(Class_base* c)
 	c->setGetterByQName("numChildren","",Class<IFunction>::getFunction(_getNumChildren));
 	c->setVariableByQName("getChildIndex","",Class<IFunction>::getFunction(getChildIndex));
 	c->setVariableByQName("getChildAt","",Class<IFunction>::getFunction(getChildAt));
+	c->setVariableByQName("getChildByName","",Class<IFunction>::getFunction(getChildByName));
 	c->setVariableByQName("addChild","",Class<IFunction>::getFunction(addChild));
 	c->setVariableByQName("removeChild","",Class<IFunction>::getFunction(removeChild));
 	c->setVariableByQName("removeChildAt","",Class<IFunction>::getFunction(removeChildAt));
@@ -1593,6 +1593,29 @@ ASFUNCTIONBODY(DisplayObjectContainer,removeChildAt)
 
 	//As we return the child we don't decRef it
 	return child;
+}
+
+//Only from VM context
+ASFUNCTIONBODY(DisplayObjectContainer,getChildByName)
+{
+	DisplayObjectContainer* th=static_cast<DisplayObjectContainer*>(obj);
+	assert_and_throw(argslen==1);
+	const tiny_string& wantedName=args[0]->toString();
+	list<DisplayObject*>::iterator it=th->dynamicDisplayList.begin();
+	ASObject* ret=NULL;
+	for(;it!=th->dynamicDisplayList.end();it++)
+	{
+		if((*it)->name==wantedName)
+		{
+			ret=*it;
+			break;
+		}
+	}
+	if(ret)
+		ret->incRef();
+	else
+		ret=new Undefined;
+	return ret;
 }
 
 //Only from VM context
@@ -2087,3 +2110,7 @@ void Bitmap::sinit(Class_base* c)
 	c->max_level=c->super->max_level+1;
 }
 
+bool Bitmap::getBounds(number_t& xmin, number_t& xmax, number_t& ymin, number_t& ymax) const
+{
+	return false;
+}

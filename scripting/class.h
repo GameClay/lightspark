@@ -33,14 +33,20 @@ template<typename T>
 class ClassName
 {
 public:
+	static const char* ns;
 	static const char* name;
 };
 
-#define REGISTER_CLASS_NAME(X) template<> \
-	const char* ClassName<X>::name = #X;
+#define SET_NAMESPACE(NS) \
+	static const char* CURRENTNAMESPACE=NS;
 
-#define REGISTER_CLASS_NAME2(X,NAME) template<> \
-	const char* ClassName<X>::name = NAME;
+#define REGISTER_CLASS_NAME(TYPE) \
+	template<> const char* ClassName<TYPE>::name = #TYPE; \
+	template<> const char* ClassName<TYPE>::ns = CURRENTNAMESPACE;
+
+#define REGISTER_CLASS_NAME2(TYPE,NAME,NS) \
+	template<> const char* ClassName<TYPE>::name = NAME; \
+	template<> const char* ClassName<TYPE>::ns = NS;
 
 class Class_inherit:public Class_base
 {
@@ -48,7 +54,7 @@ private:
 	ASObject* getInstance(bool construct, ASObject* const* args, const unsigned int argslen);
 	DictionaryTag const* tag;
 public:
-	Class_inherit(const tiny_string& name):Class_base(name),tag(NULL)
+	Class_inherit(const QName& name):Class_base(name),tag(NULL)
 	{
 		bool ret=sys->classes.insert(std::make_pair(name,this)).second;
 		if(!ret)
@@ -68,7 +74,7 @@ template< class T>
 class Class: public Class_base
 {
 private:
-	Class(const tiny_string& name):Class_base(name){}
+	Class(const QName& name):Class_base(name){}
 	//This function is instantiated always because of inheritance
 	T* getInstance(bool construct, ASObject* const* args, const unsigned int argslen)
 	{
@@ -102,9 +108,9 @@ public:
 		c->handleConstruction(ret,NULL,0,true);
 		return ret;
 	}
-	static Class<T>* getClass(const tiny_string& name)
+	static Class<T>* getClass(const QName& name)
 	{
-		std::map<tiny_string, Class_base*>::iterator it=sys->classes.find(name);
+		std::map<QName, Class_base*>::iterator it=sys->classes.find(name);
 		Class<T>* ret=NULL;
 		if(it==sys->classes.end()) //This class is not yet in the map, create it
 		{
@@ -120,7 +126,7 @@ public:
 	}
 	static Class<T>* getClass()
 	{
-		return getClass(ClassName<T>::name);
+		return getClass(QName(ClassName<T>::name,ClassName<T>::ns));
 	}
 	static T* cast(ASObject* o)
 	{
@@ -140,7 +146,7 @@ template<>
 class Class<ASObject>: public Class_base
 {
 private:
-	Class<ASObject>(const tiny_string& name):Class_base(name){}
+	Class<ASObject>(const QName& name):Class_base(name){}
 	//This function is instantiated always because of inheritance
 	ASObject* getInstance(bool construct, ASObject* const* args, const unsigned int argslen)
 	{
@@ -156,9 +162,9 @@ public:
 		Class<ASObject>* c=Class<ASObject>::getClass();
 		return c->getInstance(true,NULL,0);
 	}
-	static Class<ASObject>* getClass(const tiny_string& name)
+	static Class<ASObject>* getClass(const QName& name)
 	{
-		std::map<tiny_string, Class_base*>::iterator it=sys->classes.find(name);
+		std::map<QName, Class_base*>::iterator it=sys->classes.find(name);
 		Class<ASObject>* ret=NULL;
 		if(it==sys->classes.end()) //This class is not yet in the map, create it
 		{
@@ -174,7 +180,7 @@ public:
 	}
 	static Class<ASObject>* getClass()
 	{
-		return getClass(ClassName<ASObject>::name);
+		return getClass(QName(ClassName<ASObject>::name,ClassName<ASObject>::ns));
 	}
 	static ASObject* cast(ASObject* o)
 	{
