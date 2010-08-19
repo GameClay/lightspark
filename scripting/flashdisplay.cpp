@@ -56,6 +56,7 @@ REGISTER_CLASS_NAME(LineScaleMode);
 REGISTER_CLASS_NAME(StageScaleMode);
 REGISTER_CLASS_NAME(StageAlign);
 REGISTER_CLASS_NAME(Bitmap);
+REGISTER_CLASS_NAME(Matrix);
 
 void LoaderInfo::sinit(Class_base* c)
 {
@@ -2085,3 +2086,4 @@ void Bitmap::sinit(Class_base* c)
 	c->super=Class<DisplayObject>::getClass();
 	c->max_level=c->super->max_level+1;
 }
+
