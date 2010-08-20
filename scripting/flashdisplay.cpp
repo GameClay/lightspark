@@ -824,12 +824,14 @@ bool MovieClip::getBounds(number_t& xmin, number_t& xmax, number_t& ymin, number
 }
 
 DisplayObject::DisplayObject():useMatrix(true),tx(0),ty(0),rotation(0),sx(1),sy(1),onStage(false),root(NULL),loaderInfo(NULL),
-	alpha(1.0),visible(true),parent(NULL)
+	alpha(1.0),visible(true),parent(NULL),transform(new Transform())
 {
+	transform->incRef();
 }
 
 DisplayObject::~DisplayObject()
 {
+	transform->decRef();
 	if(loaderInfo && !sys->finalizingDestruction)
 		loaderInfo->decRef();
 }
@@ -875,6 +877,8 @@ void DisplayObject::sinit(Class_base* c)
 	c->setSetterByQName("cacheAsBitmap","",Class<IFunction>::getFunction(undefinedFunction));
 	c->setGetterByQName("opaqueBackground","",Class<IFunction>::getFunction(undefinedFunction));
 	c->setSetterByQName("opaqueBackground","",Class<IFunction>::getFunction(undefinedFunction));
+	c->setGetterByQName("transform","",Class<IFunction>::getFunction(_getTransform));
+	c->setSetterByQName("transform","",Class<IFunction>::getFunction(_setTransform));
 }
 
 void DisplayObject::buildTraits(ASObject* o)
@@ -1287,6 +1291,22 @@ ASFUNCTIONBODY(DisplayObject,_setHeight)
 		}
 		th->sy=newscale;
 	}
+	return NULL;
+}
+
+ASFUNCTIONBODY(DisplayObject,_getTransform)
+{
+	DisplayObject* th=static_cast<DisplayObject*>(obj);
+	return th->transform;
+}
+
+ASFUNCTIONBODY(DisplayObject,_setTransform)
+{
+	DisplayObject* th=static_cast<DisplayObject*>(obj);
+	assert_and_throw(argslen==1);
+	th->transform->decRef();
+	th->transform=static_cast<Transform*>(args[0]);
+	th->transform->incRef();
 	return NULL;
 }
 

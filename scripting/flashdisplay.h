@@ -36,6 +36,7 @@ class RootMovieClip;
 class DisplayListTag;
 class LoaderInfo;
 class DisplayObjectContainer;
+class Transform;
 
 class DisplayObject: public EventDispatcher
 {
@@ -58,6 +59,7 @@ protected:
 	bool isSimple() const;
 	float alpha;
 	bool visible;
+	
 public:
 	int Depth;
 	tiny_string name;
@@ -67,6 +69,7 @@ public:
 	UI16 ClipDepth;
 	CLIPACTIONS ClipActions;
 	DisplayObjectContainer* parent;
+	Transform* transform;
 	DisplayObject();
 	~DisplayObject();
 	virtual void Render()
@@ -123,6 +126,8 @@ public:
 	ASFUNCTION(_getScale9Grid);
 	ASFUNCTION(_setRotation);
 	ASFUNCTION(localToGlobal);
+	ASFUNCTION(_getTransform);
+	ASFUNCTION(_setTransform);
 };
 
 class InteractiveObject: public DisplayObject
