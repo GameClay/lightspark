@@ -466,6 +466,10 @@ void Transform::sinit(Class_base* c)
 	c->setSetterByQName("colorTransform","",Class<IFunction>::getFunction(_setColorXfm));
 	c->setGetterByQName("matrix","",Class<IFunction>::getFunction(_getMatrix));
 	c->setSetterByQName("matrix","",Class<IFunction>::getFunction(_setMatrix));
+	
+	c->setGetterByQName("concatenatedMatrix","",Class<IFunction>::getFunction(undefinedFunction)); 
+	c->setGetterByQName("pixelBounds","",Class<IFunction>::getFunction(undefinedFunction));
+	c->setGetterByQName("concatenatedColorTransform","",Class<IFunction>::getFunction(undefinedFunction));
 }
 
 ASFUNCTIONBODY(Transform,_getMatrix)
