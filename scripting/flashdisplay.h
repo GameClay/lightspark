@@ -79,16 +79,8 @@ public:
 	}
 	virtual bool getBounds(number_t& xmin, number_t& xmax, number_t& ymin, number_t& ymax) const
 	{
-		//respect useMatrix?
-		number_t w = sx / 2;
-		number_t h = sy / 2;
-			
-		xmin = tx - w;
-		xmax = tx + w;
-		ymin = ty - h;
-		ymax = ty + h;
-		
-		return true;
+		throw RunTimeException("DisplayObject::getBounds");
+		return false;
 	}
 	virtual void setRoot(RootMovieClip* root);
 	virtual void setOnStage(bool staged);
