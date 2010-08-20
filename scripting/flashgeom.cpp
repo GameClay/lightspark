@@ -443,22 +443,27 @@ ASFUNCTIONBODY(Point,polar)
 	return ret;
 }
 
-Transform::Transform(DisplayObject* parent) : matrix(NULL), parentObject(parent)
+Transform::Transform(DisplayObject* parent) : matrix(NULL), colorXfm(NULL), parentObject(parent)
 {
 	matrix = new Matrix();
 	matrix->incRef();
+	
+	colorXfm = new ColorTransform();
+	colorXfm->incRef();
 }
 
 Transform::~Transform()
 {
 	matrix->decRef();
+	colorXfm->decRef();
 }
 
 void Transform::sinit(Class_base* c)
 {
 	//c->constructor=Class<IFunction>::getFunction(_constructor);
 	c->setConstructor(NULL);
-	c->setSetterByQName("colorTransform","",Class<IFunction>::getFunction(undefinedFunction));
+	c->setGetterByQName("colorTransform","",Class<IFunction>::getFunction(_getColorXfm));
+	c->setSetterByQName("colorTransform","",Class<IFunction>::getFunction(_setColorXfm));
 	c->setGetterByQName("matrix","",Class<IFunction>::getFunction(_getMatrix));
 	c->setSetterByQName("matrix","",Class<IFunction>::getFunction(_setMatrix));
 }
@@ -476,6 +481,22 @@ ASFUNCTIONBODY(Transform,_setMatrix)
 	th->matrix->decRef();
 	th->matrix=static_cast<Matrix*>(args[0]);
 	th->matrix->incRef();
+	return NULL;
+}
+
+ASFUNCTIONBODY(Transform,_getColorXfm)
+{
+	Transform* th=static_cast<Transform*>(obj);
+	return th->colorXfm;
+}
+
+ASFUNCTIONBODY(Transform,_setColorXfm)
+{
+	Transform* th=static_cast<Transform*>(obj);
+	assert_and_throw(argslen==1);
+	th->colorXfm->decRef();
+	th->colorXfm=static_cast<ColorTransform*>(args[0]);
+	th->colorXfm->incRef();
 	return NULL;
 }
 

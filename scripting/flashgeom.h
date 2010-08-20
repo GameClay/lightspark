@@ -96,6 +96,7 @@ class Transform: public ASObject
 {
 friend class DisplayObject;
 	Matrix* matrix;
+	ColorTransform* colorXfm;
 	DisplayObject* parentObject;
 public:
 	Transform(DisplayObject* parent=NULL);
@@ -105,6 +106,8 @@ public:
 	
 	ASFUNCTION(_setMatrix);
 	ASFUNCTION(_getMatrix);
+	ASFUNCTION(_setColorXfm);
+	ASFUNCTION(_getColorXfm);
 };
 
 
