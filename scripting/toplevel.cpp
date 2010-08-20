@@ -1362,10 +1362,16 @@ void Number::sinit(Class_base* c)
 	//Must create and link the number the hard way
 	Number* ninf=new Number(-numeric_limits<double>::infinity());
 	Number* pinf=new Number(numeric_limits<double>::infinity());
+	Number* nmax=new Number(numeric_limits<double>::max());
+	Number* nmin=new Number(numeric_limits<double>::min());
 	ninf->setPrototype(c);
 	pinf->setPrototype(c);
+	nmax->setPrototype(c);
+	nmin->setPrototype(c);
 	c->setVariableByQName("NEGATIVE_INFINITY","",ninf);
 	c->setVariableByQName("POSITIVE_INFINITY","",pinf);
+	c->setVariableByQName("MAX_VALUE","",nmax);
+	c->setVariableByQName("MIN_VALUE","",nmin);
 }
 
 Date::Date():year(-1),month(-1),date(-1),hour(-1),minute(-1),second(-1),millisecond(-1)
