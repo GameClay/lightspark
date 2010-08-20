@@ -443,11 +443,40 @@ ASFUNCTIONBODY(Point,polar)
 	return ret;
 }
 
+Transform::Transform(DisplayObject* parent) : matrix(NULL), parentObject(parent)
+{
+	matrix = new Matrix();
+	matrix->incRef();
+}
+
+Transform::~Transform()
+{
+	matrix->decRef();
+}
+
 void Transform::sinit(Class_base* c)
 {
 	//c->constructor=Class<IFunction>::getFunction(_constructor);
 	c->setConstructor(NULL);
 	c->setSetterByQName("colorTransform","",Class<IFunction>::getFunction(undefinedFunction));
+	c->setGetterByQName("matrix","",Class<IFunction>::getFunction(_getMatrix));
+	c->setSetterByQName("matrix","",Class<IFunction>::getFunction(_setMatrix));
+}
+
+ASFUNCTIONBODY(Transform,_getMatrix)
+{
+	Transform* th=static_cast<Transform*>(obj);
+	return th->matrix;
+}
+
+ASFUNCTIONBODY(Transform,_setMatrix)
+{
+	Transform* th=static_cast<Transform*>(obj);
+	assert_and_throw(argslen==1);
+	th->matrix->decRef();
+	th->matrix=static_cast<Matrix*>(args[0]);
+	th->matrix->incRef();
+	return NULL;
 }
 
 void Transform::buildTraits(ASObject* o)

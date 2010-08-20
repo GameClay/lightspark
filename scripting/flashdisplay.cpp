@@ -824,8 +824,9 @@ bool MovieClip::getBounds(number_t& xmin, number_t& xmax, number_t& ymin, number
 }
 
 DisplayObject::DisplayObject():useMatrix(true),tx(0),ty(0),rotation(0),sx(1),sy(1),onStage(false),root(NULL),loaderInfo(NULL),
-	alpha(1.0),visible(true),parent(NULL),transform(new Transform())
+	alpha(1.0),visible(true),parent(NULL),transform(NULL)
 {
+	transform = new Transform(this);
 	transform->incRef();
 }
 
@@ -1306,6 +1307,7 @@ ASFUNCTIONBODY(DisplayObject,_setTransform)
 	assert_and_throw(argslen==1);
 	th->transform->decRef();
 	th->transform=static_cast<Transform*>(args[0]);
+	th->transform->parentObject=th;
 	th->transform->incRef();
 	return NULL;
 }

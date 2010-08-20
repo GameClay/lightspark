@@ -25,6 +25,7 @@
 
 namespace lightspark
 {
+class Matrix;
 
 class Rectangle: public ASObject
 {
@@ -93,9 +94,17 @@ public:
 
 class Transform: public ASObject
 {
+friend class DisplayObject;
+	Matrix* matrix;
+	DisplayObject* parentObject;
 public:
+	Transform(DisplayObject* parent=NULL);
+	~Transform();
 	static void sinit(Class_base* c);
 	static void buildTraits(ASObject* o);
+	
+	ASFUNCTION(_setMatrix);
+	ASFUNCTION(_getMatrix);
 };
 
 
