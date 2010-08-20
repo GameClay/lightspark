@@ -454,8 +454,11 @@ Transform::Transform(DisplayObject* parent) : matrix(NULL), colorXfm(NULL), pare
 
 Transform::~Transform()
 {
-	matrix->decRef();
-	colorXfm->decRef();
+	if(!sys->finalizingDestruction)
+	{
+		matrix->decRef();
+		colorXfm->decRef();
+	}
 }
 
 void Transform::sinit(Class_base* c)

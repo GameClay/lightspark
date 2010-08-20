@@ -832,9 +832,12 @@ DisplayObject::DisplayObject():useMatrix(true),tx(0),ty(0),rotation(0),sx(1),sy(
 
 DisplayObject::~DisplayObject()
 {
-	transform->decRef();
-	if(loaderInfo && !sys->finalizingDestruction)
-		loaderInfo->decRef();
+	if(!sys->finalizingDestruction)
+	{
+		transform->decRef();
+		if(loaderInfo)
+			loaderInfo->decRef();
+	}
 }
 
 void DisplayObject::sinit(Class_base* c)
