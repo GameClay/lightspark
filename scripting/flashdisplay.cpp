@@ -424,7 +424,7 @@ ASFUNCTIONBODY(Sprite,_getGraphics)
 	Sprite* th=static_cast<Sprite*>(obj);
 	//Probably graphics is not used often, so create it here
 	if(th->graphics==NULL)
-		th->graphics=Class<Graphics>::getInstanceS();
+		th->graphics=Class<Graphics>::getInstanceS(th);
 
 	th->graphics->incRef();
 	return th->graphics;
@@ -1800,7 +1800,7 @@ ASFUNCTIONBODY(Shape,_getGraphics)
 	Shape* th=static_cast<Shape*>(obj);
 	//Probably graphics is not used often, so create it here
 	if(th->graphics==NULL)
-		th->graphics=Class<Graphics>::getInstanceS();
+		th->graphics=Class<Graphics>::getInstanceS(th);
 
 	th->graphics->incRef();
 	return th->graphics;
@@ -2049,8 +2049,8 @@ ASFUNCTIONBODY(Graphics,moveTo)
 	Graphics* th=static_cast<Graphics*>(obj);
 	assert_and_throw(argslen==2);
 
-	th->curX=args[0]->toInt();
-	th->curY=args[1]->toInt();
+	th->curX=args[0]->toInt()+(th->displayParent?th->displayParent->getTx():0);
+	th->curY=args[1]->toInt()+(th->displayParent?th->displayParent->getTy():0);
 	return NULL;
 }
 
@@ -2059,8 +2059,8 @@ ASFUNCTIONBODY(Graphics,lineTo)
 	Graphics* th=static_cast<Graphics*>(obj);
 	assert_and_throw(argslen==2);
 
-	int x=args[0]->toInt();
-	int y=args[1]->toInt();
+	int x=args[0]->toInt()+(th->displayParent?th->displayParent->getTx():0);
+	int y=args[1]->toInt()+(th->displayParent?th->displayParent->getTy():0);
 
 	//TODO: support line styles to avoid this
 	if(th->styles.size())
@@ -2080,8 +2080,8 @@ ASFUNCTIONBODY(Graphics,drawCircle)
 	Graphics* th=static_cast<Graphics*>(obj);
 	assert_and_throw(argslen==3);
 
-	double x=args[0]->toNumber();
-	double y=args[1]->toNumber();
+	int x=args[0]->toInt()+(th->displayParent?th->displayParent->getTx():0);
+	int y=args[1]->toInt()+(th->displayParent?th->displayParent->getTy():0);
 	double radius=args[2]->toNumber();
 
 	const int NUM_SLICES = 20;
@@ -2115,8 +2115,8 @@ ASFUNCTIONBODY(Graphics,drawRect)
 	Graphics* th=static_cast<Graphics*>(obj);
 	assert_and_throw(argslen==4);
 
-	int x=args[0]->toInt();
-	int y=args[1]->toInt();
+	int x=args[0]->toInt()+(th->displayParent?th->displayParent->getTx():0);
+	int y=args[1]->toInt()+(th->displayParent?th->displayParent->getTy():0);
 	int width=args[2]->toInt();
 	int height=args[3]->toInt();
 

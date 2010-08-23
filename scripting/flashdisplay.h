@@ -125,6 +125,25 @@ public:
 	ASFUNCTION(localToGlobal);
 	ASFUNCTION(_getTransform);
 	ASFUNCTION(_setTransform);
+	
+	number_t getTx() 
+	{
+		if(useMatrix)
+		{
+			valFromMatrix();
+			useMatrix=false;
+		}
+		return tx;
+	}
+	number_t getTy()
+	{
+		if(useMatrix)
+		{
+			valFromMatrix();
+			useMatrix=false;
+		}
+		return ty;
+	}
 };
 
 class InteractiveObject: public DisplayObject
@@ -183,11 +202,12 @@ private:
 	mutable Mutex geometryMutex;
 	mutable bool validGeometry;
 	mutable std::vector<GeomShape> geometry;
+	DisplayObject* displayParent;
 	//We need a list to preserve pointers
 	std::list<FILLSTYLE> styles; 
 	int curX, curY;
 public:
-	Graphics():builderMutex("builderMutex"),geometryMutex("geometryMutex"),validGeometry(false),curX(0),curY(0)
+	Graphics(DisplayObject* parent = NULL):builderMutex("builderMutex"),geometryMutex("geometryMutex"),validGeometry(false),displayParent(parent),curX(0),curY(0)
 	{
 	}
 	static void sinit(Class_base* c);
