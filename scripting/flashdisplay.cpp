@@ -1975,20 +1975,26 @@ ASFUNCTIONBODY(Graphics,drawCircle)
 	double y=args[1]->toNumber();
 	double radius=args[2]->toNumber();
 
-	//Well, right now let's build a square anyway
-	const Vector2 a(x-radius,y-radius);
-	const Vector2 b(x+radius,y-radius);
-	const Vector2 c(x+radius,y+radius);
-	const Vector2 d(x-radius,y+radius);
+	const int NUM_SLICES = 20;
+	const double NUM_SLICES_D = (double)NUM_SLICES;
+	Vector2 circleVerts[NUM_SLICES];
+	double theta = 0.0;
+	for(int i = 0; i < NUM_SLICES; i++)
+	{
+		theta = (i * M_PI) / NUM_SLICES_D;
+		circleVerts[i].x = x + cos(theta) * radius;
+		circleVerts[i].y = y + sin(theta) * radius;
+	}
 
 	//TODO: support line styles to avoid this
 	if(th->styles.size())
 	{
 		Locker locker(th->builderMutex);
-		th->builder.extendOutlineForColor(th->styles.size(),a,b);
-		th->builder.extendOutlineForColor(th->styles.size(),b,c);
-		th->builder.extendOutlineForColor(th->styles.size(),c,d);
-		th->builder.extendOutlineForColor(th->styles.size(),d,a);
+		for(int i = 0; i < NUM_SLICES; i++)
+		{
+			th->builder.extendOutlineForColor(th->styles.size(),
+				circleVerts[i],circleVerts[i + 1 < NUM_SLICES ? i + 1 : 0]);
+		}
 		th->validGeometry=false;
 	}
 	return NULL;
