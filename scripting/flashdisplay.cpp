@@ -1957,7 +1957,7 @@ ASFUNCTIONBODY(Stage,_setAlign)
 		sys->alignMode=SystemState::TOP_RIGHT;
 	else if(arg0=="BR")	
 		sys->alignMode=SystemState::BOTTOM_RIGHT;
-	std::cout << "STAGE.ALIGN SET TO: " << arg0 << getDebugStackTop() << std::endl;
+	std::cout << "STAGE.ALIGN SET TO: " << arg0 << std::endl << getDebugStackTop() << std::endl;
 	//RenderThread* rt=sys->getRenderThread();
 	//if(rt)
 	//	rt->requestResize(rt->windowWidth, rt->windowHeight);
@@ -2094,6 +2094,7 @@ ASFUNCTIONBODY(Graphics,drawCircle)
 		circleVerts[i].x = x + cos(theta) * radius;
 		circleVerts[i].y = y + sin(theta) * radius;
 	}
+	cout << "Graphics.drawCircle(" << x << "," << y << "," << radius << ")" << endl << getDebugStackTop() << endl;
 
 	//TODO: support line styles to avoid this
 	if(th->styles.size())
