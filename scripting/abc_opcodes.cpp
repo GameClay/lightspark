@@ -400,7 +400,7 @@ ASObject* ABCVm::getProperty(ASObject* obj, multiname* name)
 	{
 		std::stringstream debug_info;
 		if(!getVm()->debug_stack.empty())
-			debug_info << endl << "\tLine: " << getVm()->debug_stack.back().first << " -- File: '" << getVm()->debug_stack.back().second << "'";
+			debug_info << endl << getDebugStackTop();
 		if(obj->prototype)
 		{
 			LOG(LOG_NOT_IMPLEMENTED,"Property not found " << *name << " on type " << obj->prototype->class_name << debug_info.str());

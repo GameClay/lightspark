@@ -1349,7 +1349,7 @@ void ABCVm::Run(ABCVm* th)
 		{
 			std::stringstream debug_info;
 			if(!th->debug_stack.empty())
-				debug_info << endl << "\tLine: " << th->debug_stack.back().first << " -- File: '" << th->debug_stack.back().second << "'";
+				debug_info << endl << getDebugStackTop();
 			LOG(LOG_ERROR,"Error in VM " << e.cause << debug_info.str());
 			th->m_sys->setError(e.cause);
 			bailOut=true;

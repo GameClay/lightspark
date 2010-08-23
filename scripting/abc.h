@@ -369,6 +369,12 @@ inline debug_stack_entry make_debug_stack_entry(u30 line, const tiny_string& fil
 {
 	return std::make_pair(line, file);
 }
+inline std::ostream& operator<<(std::ostream& s, const debug_stack_entry& dse)
+{
+	if(dse.second.len() > 0)
+		s << "[AS DEBUG]{ Line: " << dse.first << ", File: '" << dse.second << "' }";
+	return s;
+}
 
 struct opcode_handler
 {
@@ -672,6 +678,12 @@ inline ASObject* getGlobal()
 inline ABCVm* getVm()
 {
 	return sys->currentVm;
+}
+
+inline debug_stack_entry& getDebugStackTop()
+{
+	static debug_stack_entry sDSE = make_debug_stack_entry(0,"");
+	return getVm()->debug_stack.empty() ? sDSE : getVm()->debug_stack.back();
 }
 
 std::istream& operator>>(std::istream& in, u8& v);
