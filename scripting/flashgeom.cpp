@@ -490,11 +490,11 @@ ASFUNCTIONBODY(Matrix,_constructor)
 	{
 		//Initialize from args
 		th->a = args[0]->toNumber();
-		th->b = args[0]->toNumber();
-		th->c = args[0]->toNumber();
-		th->d = args[0]->toNumber();
-		th->tx = args[0]->toNumber();
-		th->ty = args[0]->toNumber();
+		th->b = args[1]->toNumber();
+		th->c = args[2]->toNumber();
+		th->d = args[3]->toNumber();
+		th->tx = args[4]->toNumber();
+		th->ty = args[5]->toNumber();
 	}
 
 	return NULL;
