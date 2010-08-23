@@ -661,6 +661,31 @@ void RenderThread::commonGLResize(int w, int h)
 			offsetY=0;
 			break;
 	}
+	//Adjust offset based on value from flash.display.Stage.align
+	switch(m_sys->alignMode)
+	{ 
+		case SystemState::TOP:
+			offsetY=0;
+			offsetX+=windowWidth/2;
+			break;
+		case SystemState::BOTTOM:
+			offsetY=windowHeight/2;
+			offsetX+=windowWidth/2;
+			break;
+		case SystemState::LEFT:
+			break;
+		case SystemState::RIGHT:
+			break;
+		case SystemState::TOP_RIGHT:
+			break;
+		case SystemState::BOTTOM_LEFT:
+			break;
+		case SystemState::BOTTOM_RIGHT:
+			break;
+		//Default case, no change needed
+		case SystemState::TOP_LEFT:
+			break;
+	}
 	glViewport(0,0,windowWidth,windowHeight);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
