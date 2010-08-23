@@ -512,7 +512,7 @@ tiny_string Matrix::toString(bool debugMsg)
 	snprintf(buf,512,"(a=%f, b=%f, c=%f, d=%f, tx=%f, ty=%f)",
 		a, b, c, d, tx, ty);
 	
-	return tiny_string(buf);
+	return tiny_string(buf, true);
 }
 
 ASFUNCTIONBODY(Matrix,_get_a)
