@@ -369,6 +369,8 @@ public:
 	ASFUNCTION(_getStageHeight);
 	ASFUNCTION(_getScaleMode);
 	ASFUNCTION(_setScaleMode);
+	ASFUNCTION(_getAlign);
+	ASFUNCTION(_setAlign);
 };
 
 class StageScaleMode: public ASObject

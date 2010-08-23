@@ -282,6 +282,9 @@ public:
 	enum SCALE_MODE { EXACT_FIT=0, NO_BORDER=1, NO_SCALE=2, SHOW_ALL=3 };
 	SCALE_MODE scaleMode;
 	
+	enum ALIGN_MODE { TOP=0, BOTTOM=1, LEFT=2, RIGHT=3, TOP_LEFT=4, TOP_RIGHT=5, BOTTOM_LEFT=6, BOTTOM_RIGHT=7 };
+	ALIGN_MODE alignMode;
+	
 	//Static AS class properties
 	//NAMING: static$CLASSNAME$$PROPERTYNAME$
 	//	Security

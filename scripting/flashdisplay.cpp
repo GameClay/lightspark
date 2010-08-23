@@ -1833,6 +1833,8 @@ void Stage::sinit(Class_base* c)
 	c->setGetterByQName("stageHeight","",Class<IFunction>::getFunction(_getStageHeight));
 	c->setGetterByQName("scaleMode","",Class<IFunction>::getFunction(_getScaleMode));
 	c->setSetterByQName("scaleMode","",Class<IFunction>::getFunction(_setScaleMode));
+	c->setGetterByQName("align","",Class<IFunction>::getFunction(_getAlign));
+	c->setSetterByQName("align","",Class<IFunction>::getFunction(_setAlign));
 }
 
 void Stage::buildTraits(ASObject* o)
@@ -1908,6 +1910,57 @@ ASFUNCTIONBODY(Stage,_setScaleMode)
 	RenderThread* rt=sys->getRenderThread();
 	if(rt)
 		rt->requestResize(rt->windowWidth, rt->windowHeight);
+	return NULL;
+}
+
+ASFUNCTIONBODY(Stage,_getAlign)
+{
+	//Stage* th=static_cast<Stage*>(obj);
+	switch(sys->alignMode)
+	{
+		case SystemState::TOP:
+			return Class<ASString>::getInstanceS("T");
+		case SystemState::BOTTOM:
+			return Class<ASString>::getInstanceS("B");
+		case SystemState::LEFT:
+			return Class<ASString>::getInstanceS("L");
+		case SystemState::RIGHT:
+			return Class<ASString>::getInstanceS("R");
+		case SystemState::TOP_LEFT:
+			return Class<ASString>::getInstanceS("TL");
+		case SystemState::BOTTOM_LEFT:
+			return Class<ASString>::getInstanceS("BL");
+		case SystemState::TOP_RIGHT:
+			return Class<ASString>::getInstanceS("TR");
+		case SystemState::BOTTOM_RIGHT:
+			return Class<ASString>::getInstanceS("BR");
+	}
+}
+
+ASFUNCTIONBODY(Stage,_setAlign)
+{
+	//Stage* th=static_cast<Stage*>(obj);
+	const tiny_string& arg0=args[0]->toString();
+	if(arg0=="T")
+		sys->alignMode=SystemState::TOP;
+	else if(arg0=="B")	
+		sys->alignMode=SystemState::BOTTOM;
+	else if(arg0=="L")	
+		sys->alignMode=SystemState::LEFT;
+	else if(arg0=="R")	
+		sys->alignMode=SystemState::RIGHT;
+	else if(arg0=="TL")
+		sys->alignMode=SystemState::TOP_LEFT;
+	else if(arg0=="BL")	
+		sys->alignMode=SystemState::BOTTOM_LEFT;
+	else if(arg0=="TR")	
+		sys->alignMode=SystemState::TOP_RIGHT;
+	else if(arg0=="BR")	
+		sys->alignMode=SystemState::BOTTOM_RIGHT;
+	std::cout << "STAGE.ALIGN SET TO: " << arg0 << std::endl;
+	//RenderThread* rt=sys->getRenderThread();
+	//if(rt)
+	//	rt->requestResize(rt->windowWidth, rt->windowHeight);
 	return NULL;
 }
 
@@ -2162,6 +2215,13 @@ void StageScaleMode::sinit(Class_base* c)
 void StageAlign::sinit(Class_base* c)
 {
 	c->setVariableByQName("TOP_LEFT","",Class<ASString>::getInstanceS("TL"));
+	c->setVariableByQName("TOP_RIGHT","",Class<ASString>::getInstanceS("TR"));
+	c->setVariableByQName("TOP","",Class<ASString>::getInstanceS("T"));
+	c->setVariableByQName("LEFT","",Class<ASString>::getInstanceS("L"));
+	c->setVariableByQName("RIGHT","",Class<ASString>::getInstanceS("R"));
+	c->setVariableByQName("BOTTOM_RIGHT","",Class<ASString>::getInstanceS("BR"));
+	c->setVariableByQName("BOTTOM_LEFT","",Class<ASString>::getInstanceS("BL"));
+	c->setVariableByQName("BOTTOM","",Class<ASString>::getInstanceS("B"));
 }
 
 void Bitmap::sinit(Class_base* c)
