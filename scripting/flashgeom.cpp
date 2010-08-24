@@ -572,6 +572,29 @@ tiny_string Matrix::toString(bool debugMsg)
 	return tiny_string(buf, true);
 }
 
+bool Matrix::extractParameters(number_t& rotation, number_t& scaleX, number_t& scaleY, number_t& posX, number_t& posY) const
+{
+	//Translation
+	posX = tx;
+	posY = ty;
+	
+	//Scale for a co-ordinate from a matrix is the magnitude of its
+	//corrisponding basis vector
+	getScaleX(scaleX); 
+	getScaleX(scaleY);
+	
+	//Degenerate case
+	if(scaleX==0.0)//TODO: Epsilon compare
+		return false;
+	
+	//Rotation around the Z axis 
+	number_t xx = a / scaleX;
+	number_t xy = b / scaleX;
+	rotation = ::atan2(xy, xx);
+	
+	return true;
+}
+
 ASFUNCTIONBODY(Matrix,_get_a)
 {
 	Matrix* th=static_cast<Matrix*>(obj);

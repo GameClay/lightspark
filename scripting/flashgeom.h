@@ -113,11 +113,22 @@ public:
 
 class Matrix: public ASObject
 {
-	number_t a, b, c, d, tx, ty;
 public:
+	number_t a, b, c, d, tx, ty;
+	
 	Matrix():a(1),b(0),c(0),d(1),tx(0),ty(0){} //Identity matrix
 	static void sinit(Class_base* c);
 	static void buildTraits(ASObject* o);
+	
+	bool extractParameters(number_t& rotation, number_t& scaleX, number_t& scaleY, number_t& posX, number_t& posY) const;
+	void getScaleX(number_t& scaleX) const
+	{
+		scaleX=::sqrt(a*a + b*b);
+	}
+	void getScaleY(number_t& scaleY) const
+	{
+		scaleY=::sqrt(c*c + d*d);
+	}
 	
 	//Overloads
 	tiny_string toString(bool debugMsg=false);
