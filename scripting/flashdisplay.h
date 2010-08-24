@@ -44,9 +44,6 @@ friend class DisplayObjectContainer;
 private:
 	MATRIX Matrix;
 	bool useMatrix;
-	number_t tx,ty;
-	number_t rotation;
-	number_t sx,sy;
 	bool onStage;
 
 protected:

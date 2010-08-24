@@ -823,7 +823,7 @@ bool MovieClip::getBounds(number_t& xmin, number_t& xmax, number_t& ymin, number
 	return false;
 }
 
-DisplayObject::DisplayObject():useMatrix(true),tx(0),ty(0),rotation(0),sx(1),sy(1),onStage(false),root(NULL),loaderInfo(NULL),
+DisplayObject::DisplayObject():useMatrix(true),onStage(false),root(NULL),loaderInfo(NULL),
 	alpha(1.0),visible(true),parent(NULL),transform(NULL)
 {
 	transform = new Transform(this);
@@ -901,12 +901,12 @@ MATRIX DisplayObject::getMatrix() const
 		ret=Matrix;
 	else
 	{
-		ret.TranslateX=tx;
-		ret.TranslateY=ty;
-		ret.ScaleX=sx*cos(rotation*M_PI/180);
-		ret.RotateSkew1=-sx*sin(rotation*M_PI/180);
-		ret.RotateSkew0=sy*sin(rotation*M_PI/180);
-		ret.ScaleY=sy*cos(rotation*M_PI/180);
+		ret.TranslateX=transform->matrix->tx;
+		ret.TranslateY=transform->matrix->ty;
+		ret.ScaleX=transform->matrix->a;
+		ret.RotateSkew1=transform->matrix->b;
+		ret.RotateSkew0=transform->matrix->c;
+		ret.ScaleY=transform->matrix->d;
 	}
 	return ret;
 }
@@ -914,10 +914,12 @@ MATRIX DisplayObject::getMatrix() const
 void DisplayObject::valFromMatrix()
 {
 	assert(useMatrix);
-	tx=Matrix.TranslateX;
-	ty=Matrix.TranslateY;
-	sx=Matrix.ScaleX;
-	sy=Matrix.ScaleY;
+	transform->matrix->tx=Matrix.TranslateX;
+	transform->matrix->ty=Matrix.TranslateY;
+	transform->matrix->a=Matrix.ScaleX;
+	transform->matrix->b=Matrix.RotateSkew1;
+	transform->matrix->c=Matrix.RotateSkew0;
+	transform->matrix->d=Matrix.ScaleY;
 }
 
 bool DisplayObject::isSimple() const
@@ -988,7 +990,11 @@ ASFUNCTIONBODY(DisplayObject,_getScaleX)
 	if(th->useMatrix)
 		return abstract_d(th->Matrix.ScaleX);
 	else
-		return abstract_d(th->sx);
+	{
+		number_t scaleX;
+		th->transform->matrix->getScaleX(scaleX);
+		return abstract_d(scaleX);
+	}
 }
 
 ASFUNCTIONBODY(DisplayObject,_setScaleX)
@@ -1001,7 +1007,11 @@ ASFUNCTIONBODY(DisplayObject,_setScaleX)
 		th->valFromMatrix();
 		th->useMatrix=false;
 	}
-	th->sx=val;
+	number_t scaleFactor;
+	th->transform->matrix->getScaleX(scaleFactor);
+	scaleFactor = val / scaleFactor;
+	th->transform->matrix->a *= scaleFactor;
+	th->transform->matrix->b *= scaleFactor;
 	return NULL;
 }
 
@@ -1011,7 +1021,11 @@ ASFUNCTIONBODY(DisplayObject,_getScaleY)
 	if(th->useMatrix)
 		return abstract_d(th->Matrix.ScaleY);
 	else
-		return abstract_d(th->sy);
+	{
+		number_t scaleY;
+		th->transform->matrix->getScaleY(scaleY);
+		return abstract_d(scaleY);
+	}
 }
 
 ASFUNCTIONBODY(DisplayObject,_setScaleY)
@@ -1024,7 +1038,11 @@ ASFUNCTIONBODY(DisplayObject,_setScaleY)
 		th->valFromMatrix();
 		th->useMatrix=false;
 	}
-	th->sy=val;
+	number_t scaleFactor;
+	th->transform->matrix->getScaleY(scaleFactor);
+	scaleFactor = val / scaleFactor;
+	th->transform->matrix->c *= scaleFactor;
+	th->transform->matrix->d *= scaleFactor;
 	return NULL;
 }
 
@@ -1034,7 +1052,7 @@ ASFUNCTIONBODY(DisplayObject,_getX)
 	if(th->useMatrix)
 		return abstract_d(th->Matrix.TranslateX);
 	else
-		return abstract_d(th->tx);
+		return abstract_d(th->transform->matrix->tx);
 }
 
 ASFUNCTIONBODY(DisplayObject,_setX)
@@ -1047,7 +1065,7 @@ ASFUNCTIONBODY(DisplayObject,_setX)
 		th->valFromMatrix();
 		th->useMatrix=false;
 	}
-	th->tx=val;
+	th->transform->matrix->tx=val;
 	return NULL;
 }
 
@@ -1057,7 +1075,7 @@ ASFUNCTIONBODY(DisplayObject,_getY)
 	if(th->useMatrix)
 		return abstract_d(th->Matrix.TranslateY);
 	else
-		return abstract_d(th->ty);
+		return abstract_d(th->transform->matrix->ty);
 }
 
 ASFUNCTIONBODY(DisplayObject,_setY)
@@ -1070,7 +1088,7 @@ ASFUNCTIONBODY(DisplayObject,_setY)
 		th->valFromMatrix();
 		th->useMatrix=false;
 	}
-	th->ty=val;
+	th->transform->matrix->ty=val;
 	return NULL;
 }
 
@@ -1156,7 +1174,13 @@ ASFUNCTIONBODY(DisplayObject,_setRotation)
 		th->valFromMatrix();
 		th->useMatrix=false;
 	}
-	th->rotation=val;
+	
+	number_t scaleX, scaleY;
+	th->transform->matrix->getScaleX(scaleX);
+	th->transform->matrix->getScaleY(scaleY);
+	th->transform->matrix->a = ::cos(val) * scaleX; th->transform->matrix->c = -::sin(val) * scaleY;
+	th->transform->matrix->b = ::sin(val) * scaleX; th->transform->matrix->d =  ::cos(val) * scaleY;
+	
 	return NULL;
 }
 
@@ -1199,13 +1223,14 @@ ASFUNCTIONBODY(DisplayObject,_getRoot)
 ASFUNCTIONBODY(DisplayObject,_getRotation)
 {
 	DisplayObject* th=static_cast<DisplayObject*>(obj);
-	//There is no easy way to get rotation from matrix, let's ignore the matrix
 	if(th->useMatrix)
 	{
 		th->valFromMatrix();
 		th->useMatrix=false;
 	}
-	return abstract_d(th->rotation);
+	number_t rotation, n[4];
+	th->transform->matrix->extractParameters(rotation, n[0], n[1], n[2], n[3]);
+	return abstract_d(rotation);
 }
 
 ASFUNCTIONBODY(DisplayObject,_setVisible)
@@ -1263,7 +1288,10 @@ ASFUNCTIONBODY(DisplayObject,_setWidth)
 			th->valFromMatrix();
 			th->useMatrix=false;
 		}
-		th->sx=newscale;
+		number_t scaleX;
+		th->transform->matrix->getScaleX(scaleX);
+		th->transform->matrix->a *= newscale / scaleX;
+		th->transform->matrix->b *= newscale / scaleX;
 	}
 	return NULL;
 }
@@ -1271,7 +1299,7 @@ ASFUNCTIONBODY(DisplayObject,_setWidth)
 ASFUNCTIONBODY(DisplayObject,_getHeight)
 {
 	DisplayObject* th=static_cast<DisplayObject*>(obj);
-	int ret=th->computeHeight();;
+	int ret=th->computeHeight();
 	return abstract_i(ret);
 }
 
@@ -1293,7 +1321,10 @@ ASFUNCTIONBODY(DisplayObject,_setHeight)
 			th->valFromMatrix();
 			th->useMatrix=false;
 		}
-		th->sy=newscale;
+		number_t scaleY;
+		th->transform->matrix->getScaleY(scaleY);
+		th->transform->matrix->c *= newscale / scaleY;
+		th->transform->matrix->d *= newscale / scaleY;
 	}
 	return NULL;
 }
