@@ -2114,7 +2114,7 @@ ASFUNCTIONBODY(Graphics,drawCircle)
 		circleVerts[i].x = x + cos(theta) * radius;
 		circleVerts[i].y = y + sin(theta) * radius;
 	}
-	cout << (th->displayParent?th->displayParent->transform->matrix->toString():"") << "Graphics.drawCircle(" << x << "," << y << "," << radius << ")" << endl << getDebugStackTop() << endl;
+	cout << (th->displayParent?th->displayParent->transform->toString():"") << "Graphics.drawCircle(" << x << "," << y << "," << radius << ")" << endl << getDebugStackTop() << endl;
 
 	//TODO: support line styles to avoid this
 	if(th->styles.size())
