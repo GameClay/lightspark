@@ -1343,6 +1343,7 @@ ASFUNCTIONBODY(DisplayObject,_setTransform)
 	th->transform=static_cast<Transform*>(args[0]);
 	th->transform->parentObject=th;
 	th->transform->incRef();
+	cout << "SET TRANSFORM: " << th->transform->toString() << endl;
 	return NULL;
 }
 
@@ -2113,7 +2114,7 @@ ASFUNCTIONBODY(Graphics,drawCircle)
 		circleVerts[i].x = x + cos(theta) * radius;
 		circleVerts[i].y = y + sin(theta) * radius;
 	}
-	cout << (th->displayParent?th->displayParent->toString():"") << "Graphics.drawCircle(" << x << "," << y << "," << radius << ")" << endl << getDebugStackTop() << endl;
+	cout << (th->displayParent?th->displayParent->transform->matrix->toString():"") << "Graphics.drawCircle(" << x << "," << y << "," << radius << ")" << endl << getDebugStackTop() << endl;
 
 	//TODO: support line styles to avoid this
 	if(th->styles.size())

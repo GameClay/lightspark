@@ -488,6 +488,7 @@ ASFUNCTIONBODY(Transform,_setMatrix)
 	th->matrix->decRef();
 	th->matrix=static_cast<Matrix*>(args[0]);
 	th->matrix->incRef();
+	cout << "SET TRANSFORM: " << th->matrix->toString() << endl;
 	return NULL;
 }
 
