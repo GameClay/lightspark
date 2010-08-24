@@ -1346,6 +1346,25 @@ ASFUNCTIONBODY(DisplayObject,_setTransform)
 	return NULL;
 }
 
+number_t DisplayObject::getTx() 
+{
+	if(useMatrix)
+	{
+		valFromMatrix();
+		useMatrix=false;
+	}
+	return transform->matrix->tx;
+}
+number_t DisplayObject::getTy()
+{
+	if(useMatrix)
+	{
+		valFromMatrix();
+		useMatrix=false;
+	}
+	return transform->matrix->ty;
+}
+
 void DisplayObjectContainer::sinit(Class_base* c)
 {
 	c->setConstructor(Class<IFunction>::getFunction(_constructor));

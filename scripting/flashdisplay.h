@@ -126,24 +126,8 @@ public:
 	ASFUNCTION(_getTransform);
 	ASFUNCTION(_setTransform);
 	
-	number_t getTx() 
-	{
-		if(useMatrix)
-		{
-			valFromMatrix();
-			useMatrix=false;
-		}
-		return tx;
-	}
-	number_t getTy()
-	{
-		if(useMatrix)
-		{
-			valFromMatrix();
-			useMatrix=false;
-		}
-		return ty;
-	}
+	number_t getTx();
+	number_t getTy();
 };
 
 class InteractiveObject: public DisplayObject
