@@ -475,6 +475,11 @@ void Transform::sinit(Class_base* c)
 	c->setGetterByQName("concatenatedColorTransform","",Class<IFunction>::getFunction(undefinedFunction));
 }
 
+tiny_string Transform::toString(bool debugMsg)
+{
+	return matrix->toString(debugMsg);
+}
+
 ASFUNCTIONBODY(Transform,_getMatrix)
 {
 	Transform* th=static_cast<Transform*>(obj);

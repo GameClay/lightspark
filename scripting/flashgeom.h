@@ -103,6 +103,7 @@ public:
 	~Transform();
 	static void sinit(Class_base* c);
 	static void buildTraits(ASObject* o);
+	tiny_string toString(bool debugMsg=false);
 	
 	ASFUNCTION(_setMatrix);
 	ASFUNCTION(_getMatrix);
