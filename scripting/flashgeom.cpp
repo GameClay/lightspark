@@ -691,7 +691,7 @@ ASFUNCTIONBODY(Matrix,identity)
 	assert_and_throw(argslen==0);
 	
 	th->a = 1.0; th->c = 0.0; th->tx = 0.0;
-	th->b = 0.0; th->d = 0.0; th->ty = 0.0;
+	th->b = 0.0; th->d = 1.0; th->ty = 0.0;
 		
 	return NULL;
 }
@@ -700,9 +700,12 @@ ASFUNCTIONBODY(Matrix,rotate)
 {
 	Matrix* th=static_cast<Matrix*>(obj);
 	assert_and_throw(argslen==1);
-	double angle = args[0]->toNumber();
-	th->a = ::cos(angle); th->c = -::sin(angle); th->tx = 0.0;
-	th->b = ::sin(angle); th->d =  ::cos(angle); th->ty = 0.0;
+	number_t angle = args[0]->toNumber();
+	number_t scaleX, scaleY;
+	th->getScaleX(scaleX);
+	th->getScaleY(scaleY);
+	th->a = ::cos(angle) * scaleX; th->c = -::sin(angle) * scaleY;
+	th->b = ::sin(angle) * scaleX; th->d =  ::cos(angle) * scaleY;
 		
 	return NULL;
 }
@@ -711,10 +714,13 @@ ASFUNCTIONBODY(Matrix,scale)
 {
 	Matrix* th=static_cast<Matrix*>(obj);
 	assert_and_throw(argslen==2);
-	double sx = args[0]->toNumber();
-	double sy = args[1]->toNumber();
-	th->a = sx;   th->c = 0.0; th->tx = 0.0;
-	th->b = 0.0;  th->d = sy;  th->ty = 0.0;
+	number_t sx = args[0]->toNumber();
+	number_t sy = args[1]->toNumber();
+	number_t scaleX, scaleY;
+	th->getScaleX(scaleX);
+	th->getScaleY(scaleY);
+	th->a *= sx/scaleX;  th->c = sy/scaleY;
+	th->b *= sx/scaleX;  th->d = sy/scaleY;
 		
 	return NULL;
 }
@@ -723,8 +729,8 @@ ASFUNCTIONBODY(Matrix,translate)
 {
 	Matrix* th=static_cast<Matrix*>(obj);
 	assert_and_throw(argslen==2);
-	double dx = args[0]->toNumber();
-	double dy = args[1]->toNumber();
+	number_t dx = args[0]->toNumber();
+	number_t dy = args[1]->toNumber();
 	th->tx += dx;
 	th->ty += dy;
 		
