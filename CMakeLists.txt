@@ -213,13 +213,14 @@ ENDIF(ENABLE_DEBIAN_ALTERNATIVES)
 # Compiler defaults flags for different profiles
 IF (CMAKE_COMPILER_IS_GNUCC)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wnon-virtual-dtor -Woverloaded-virtual -pipe -fvisibility=hidden -fvisibility-inlines-hidden -std=c++0x")
-
 SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DEXPENSIVE_DEBUG")
 SET(CMAKE_CXX_FLAGS_PROFILE "-g -pg -O2")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O2 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_DEBIAN "-O2 -DNDEBUG")
 SET(CMAKE_CXX_FLAGS_LEANDEBUG "-g -O2")
+
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 ADD_DEFINITIONS(-DDATADIR="${CMAKE_INSTALL_PREFIX}/share/lightspark" -DGNASH_PATH="${GNASH_EXE_PATH}")
 
@@ -235,6 +236,48 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_PROCESS
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_PROCESSOR}/${CMAKE_BUILD_TYPE}/lib${LIB_SUFFIX}")
 #SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/objs/${CMAKE_SYSTEM_PROCESSOR}/${CMAKE_BUILD_TYPE}/lib${LIB_SUFFIX}" CACHE PATH "Static libraries output directory")
 ENDIF ()
+
+# libamp sources
+SET(LIBAMP_COMMON_SOURCES 
+	amp/src/c/amp/amp_barrier_common.c
+	#amp/src/c/amp/amp_barrier_generic_broadcast.c # using generic signal
+	amp/src/c/amp/amp_barrier_generic_signal.c
+	amp/src/c/amp/amp_condition_variable_common.c
+	amp/src/c/amp/amp_memory.c
+	amp/src/c/amp/amp_mutex_common.c
+	amp/src/c/amp/amp_platform_common.c
+	amp/src/c/amp/amp_platform_sysconf.c
+	amp/src/c/amp/amp_platform_sysctl.c
+	amp/src/c/amp/amp_platform_unknown.c
+	amp/src/c/amp/amp_semaphore_common.c
+	amp/src/c/amp/amp_thread_array.c
+	amp/src/c/amp/amp_thread_common.c
+	amp/src/c/amp/amp_thread_local_slot_common.c
+)
+
+SET(LIBAMP_POSIX_SOURCES
+	amp/src/c/amp/amp_condition_variable_pthreads.c
+	amp/src/c/amp/amp_mutex_pthreads.c
+	amp/src/c/amp/amp_platform_gnuc.c
+	#amp/src/c/amp/amp_semaphore_libdispatch.c   # using amp_semaphore_pthreads, dispatch is mac only
+	#amp/src/c/amp/amp_semaphore_posix_1003_1b.c # using amp_semaphore_pthreads
+	amp/src/c/amp/amp_semaphore_pthreads.c
+	amp/src/c/amp/amp_thread_local_slot_pthreads.c
+	amp/src/c/amp/amp_thread_pthreads.c
+)
+
+SET(LIBAMP_WIN_SOURCES
+	amp/src/c/amp/amp_condition_variable_winthreads.c
+	amp/src/c/amp/amp_condition_variable_winvista.c
+	amp/src/c/amp/amp_internal_platform_win_system_info.c
+	amp/src/c/amp/amp_internal_platform_win_system_logical_processor_information.c
+	amp/src/c/amp/amp_mutex_winthreads.c
+	amp/src/c/amp/amp_platform_windows_min_host_sdk_win2000.c
+	amp/src/c/amp/amp_platform_windows_min_host_sdk_winserver2003_or_winxp_sp3_or_winxp_pro_x64.c
+	amp/src/c/amp/amp_semaphore_winthreads.c
+	amp/src/c/amp/amp_thread_local_slot_winthreads.c
+	amp/src/c/amp/amp_thread_winthreads.c
+)
 
 # liblightspark.so sources
 SET(LIBSPARK_SOURCES 
@@ -291,6 +334,11 @@ ENDIF(${i386})
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+
+# add libamp to liblightspark target
+SET(LIBSPARK_SOURCES ${LIBSPARK_SOURCES} ${LIBAMP_SOURCES} ${LIBAMP_POSIX_SOURCES})
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/amp/src/c)
+ADD_DEFINITIONS(-DAMP_USE_PTHREADS -DAMP_USE_GENERIC_SIGNAL_BARRIERS -D_GNU_SOURCE)
 
 # liblightspark.so target
 IF (CMAKE_COMPILER_IS_GNUCC)
