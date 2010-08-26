@@ -85,12 +85,12 @@ RenderThread::RenderThread(SystemState* s,ENGINE e,void* params):m_sys(s),termin
 #endif
 
 	if(e==SDL)
-		pthread_create(&t,NULL,(thread_worker)sdl_worker,this);
+		amp_thread_create_and_launch(&t,AMP_DEFAULT_ALLOCATOR,this,(thread_worker)sdl_worker);
 #ifdef COMPILE_PLUGIN
 	else if(e==GTKPLUG)
 	{
 		npapi_params=(NPAPI_params*)params;
-		pthread_create(&t,NULL,(thread_worker)gtkplug_worker,this);
+		amp_thread_create_and_launch(&t,AMP_DEFAULT_ALLOCATOR,this,(thread_worker)gtkplug_worker);
 	}
 #endif
 	time_s = compat_get_current_time_ms();

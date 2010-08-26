@@ -39,7 +39,7 @@ InputThread::InputThread(SystemState* s,ENGINE e, void* param):m_sys(s),terminat
 	if(e==SDL)
 	{
 		threaded=true;
-		pthread_create(&t,NULL,(thread_worker)sdl_worker,this);
+		amp_thread_create_and_launch(&t,AMP_DEFAULT_ALLOCATOR,this,(thread_worker)sdl_worker);
 	}
 #ifdef COMPILE_PLUGIN
 	else if(e==GTKPLUG)

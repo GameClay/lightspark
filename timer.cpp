@@ -60,7 +60,7 @@ TimerThread::TimerThread(SystemState* s):m_sys(s),currentJob(NULL),stopped(false
 	amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
 	amp_semaphore_create(&newEvent,AMP_DEFAULT_ALLOCATOR,0);
 
-	pthread_create(&t,NULL,(thread_worker)timer_worker,this);
+	amp_thread_create_and_launch(&t,AMP_DEFAULT_ALLOCATOR,this,(thread_worker)timer_worker);
 }
 
 void TimerThread::stop()

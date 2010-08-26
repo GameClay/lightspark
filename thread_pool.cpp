@@ -37,7 +37,7 @@ ThreadPool::ThreadPool(SystemState* s):stopFlag(false)
 	for(int i=0;i<NUM_THREADS;i++)
 	{
 		curJobs[i]=NULL;
-		pthread_create(&threads[i],NULL,job_worker,this);
+		amp_thread_create_and_launch(&threads[i],AMP_DEFAULT_ALLOCATOR,this,job_worker);
 	}
 }
 

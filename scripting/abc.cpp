@@ -957,7 +957,7 @@ ABCVm::ABCVm(SystemState* s):m_sys(s),terminated(false),shuttingdown(false)
 	LOG(LOG_NO_INFO,"Global is " << Global);
 	//Push a dummy default context
 	pushObjAndLevel(Class<ASObject>::getInstanceS(),0);
-	pthread_create(&t,NULL,(thread_worker)Run,this);
+	amp_thread_create_and_launch(&t,AMP_DEFAULT_ALLOCATOR,this,(thread_worker)Run);
 }
 
 void ABCVm::shutdown()
