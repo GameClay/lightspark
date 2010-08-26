@@ -64,8 +64,8 @@ ThreadPool::~ThreadPool()
 
 	for(int i=0;i<NUM_THREADS;i++)
 	{
-		if(pthread_join(threads[i],NULL)!=0)
-			LOG(LOG_ERROR,"pthread_join failed in ~ThreadPool");
+		if(amp_thread_join_and_destroy(threads[i],AMP_DEFAULT_ALLOCATOR)!=0)
+			LOG(LOG_ERROR,"amp_thread_join_and_destroy failed in ~ThreadPool");
 	}
 
 	amp_semaphore_destroy(&num_jobs,AMP_DEFAULT_ALLOCATOR);

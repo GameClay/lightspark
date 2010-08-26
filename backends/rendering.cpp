@@ -44,7 +44,7 @@ void RenderThread::wait()
 	terminated=true;
 	//Signal potentially blocking semaphore
 	amp_semaphore_signal(render);
-	int ret=pthread_join(t,NULL);
+	int ret=amp_thread_join_and_destroy(t,AMP_DEFAULT_ALLOCATOR);
 	assert_and_throw(ret==0);
 }
 
