@@ -44,7 +44,7 @@ void RenderThread::wait()
 	terminated=true;
 	//Signal potentially blocking semaphore
 	amp_semaphore_signal(render);
-	int ret=amp_thread_join_and_destroy(t,AMP_DEFAULT_ALLOCATOR);
+	int ret=amp_thread_join_and_destroy(&t,AMP_DEFAULT_ALLOCATOR);
 	assert_and_throw(ret==0);
 }
 
@@ -187,7 +187,7 @@ void RenderThread::gtkplug_worker(RenderThread* th)
 	if(!glx_present)
 	{
 		LOG(LOG_ERROR,"glX not present");
-		return NULL;
+		return;
 	}
 	int attrib[10]={GLX_BUFFER_SIZE,24,GLX_DOUBLEBUFFER,True,None};
 	GLXFBConfig* fb=glXChooseFBConfig(d, 0, attrib, &a);
@@ -214,7 +214,7 @@ void RenderThread::gtkplug_worker(RenderThread* th)
 	{
 		//No suitable id found
 		LOG(LOG_ERROR,"No suitable graphics configuration available");
-		return NULL;
+		return;
 	}
 	th->mFBConfig=fb[i];
 	cout << "Chosen config " << hex << fb[i] << dec << endl;

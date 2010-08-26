@@ -31,10 +31,10 @@ private:
 	SystemState* m_sys;
 	amp_thread_t t;
 	bool terminated;
-	static void* sdl_worker(RenderThread*);
+	static void sdl_worker(RenderThread*);
 #ifdef COMPILE_PLUGIN
 	NPAPI_params* npapi_params;
-	static void* gtkplug_worker(RenderThread*);
+	static void gtkplug_worker(RenderThread*);
 #endif
 	void commonGLInit(int width, int height);
 	void commonGLResize(int width, int height);
