@@ -75,7 +75,7 @@ void TimerThread::stop()
 void TimerThread::wait()
 {
 	stop();
-	amp_thread_join_and_destroy(t,AMP_DEFAULT_ALLOCATOR);
+	amp_thread_join_and_destroy(&t,AMP_DEFAULT_ALLOCATOR);
 }
 
 TimerThread::~TimerThread()
