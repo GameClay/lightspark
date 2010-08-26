@@ -67,7 +67,7 @@ void InputThread::wait()
 	if(terminated)
 		return;
 	if(threaded)
-		amp_thread_join_and_destroy(t,AMP_DEFAULT_ALLOCATOR);
+		amp_thread_join_and_destroy(&t,AMP_DEFAULT_ALLOCATOR);
 	terminated=true;
 }
 
