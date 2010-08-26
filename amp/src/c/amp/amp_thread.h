@@ -177,6 +177,15 @@ extern "C" {
      * in use.
      */
     int amp_thread_yield(void);
+	
+	/**
+	 * Terminates the calling thread
+	 *
+	 * @return This function can not return a value.
+	 *
+	 * TODO: @todo Decide on way to retrieve thread exit code
+	 */
+	 void amp_thread_exit(uintptr_t exit_value);
     
     
 

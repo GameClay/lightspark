@@ -265,4 +265,8 @@ int amp_thread_yield(void)
 }
 
 
+void amp_thread_exit(uintptr_t exit_value)
+{
+	ExitThread(exit_value);
+}
 

@@ -152,7 +152,7 @@ void TimerThread::timer_worker(TimerThread* th)
 		amp_semaphore_signal(th->mutex);
 		int ret=sem_timedwait(&th->newEvent, &tmpt);
 		if(th->stopped)
-			pthread_exit(0);
+			amp_thread_exit(0);
 
 		if(ret==0)
 			continue;
