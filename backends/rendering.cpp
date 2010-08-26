@@ -273,7 +273,7 @@ void RenderThread::gtkplug_worker(RenderThread* th)
 
 			//Before starting rendering, cleanup all the request arrived in the meantime
 			int fakeRenderCount=0;
-			while(amp_semaphore_trywait(&th->render)==AMP_SUCCESS)
+			while(amp_semaphore_trywait_PROPOSED(th->render)==AMP_SUCCESS)
 			{
 				if(th->m_sys->isShuttingDown())
 					break;
@@ -748,7 +748,7 @@ void RenderThread::sdl_worker(RenderThread* th)
 
 			//Before starting rendering, cleanup all the request arrived in the meantime
 			int fakeRenderCount=0;
-			while(amp_semaphore_trywait(&th->render)==AMP_SUCCESS)
+			while(amp_semaphore_trywait_PROPOSED(th->render)==AMP_SUCCESS)
 			{
 				if(th->m_sys->isShuttingDown())
 					break;

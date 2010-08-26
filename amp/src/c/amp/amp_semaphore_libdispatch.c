@@ -131,7 +131,16 @@ int amp_semaphore_signal(amp_semaphore_t semaphore)
 
 int amp_semaphore_trywait_PROPOSED(amp_semaphore_t semaphore)
 {
-    /* TODO when on the mac */
-    return AMP_ERROR;
+    assert(NULL != semaphore);
+    assert(NULL != semaphore->semaphore);
+    
+    int return_code = AMP_SUCCESS
+    long retval = dispatch_semaphore_wait(semaphore->semaphore, 0);
+    
+    if (0 != retval) {
+        return_code = AMP_BUSY;
+    }
+    
+    return return_code;
 }
 

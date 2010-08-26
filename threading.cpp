@@ -79,7 +79,7 @@ void Mutex::lock()
 	if(name)
 	{
 		//If the semaphore can be acquired immediately just return
-		if(amp_semaphore_trywait(&sem)==AMP_SUCCESS)
+		if(amp_semaphore_trywait_PROPOSED(sem)==AMP_SUCCESS)
 			return;
 
 		//Otherwise log the busy event and do a real wait
@@ -113,7 +113,7 @@ void Semaphore::wait()
 
 bool Semaphore::try_wait()
 {
-	return amp_semaphore_trywait(&sem)==AMP_SUCCESS;
+	return amp_semaphore_trywait_PROPOSED(sem)==AMP_SUCCESS;
 }
 
 void Semaphore::signal()
