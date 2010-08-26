@@ -135,7 +135,7 @@ private:
 	LS_AUDIO_CODEC audioCodec;
 	uint32_t soundStreamId;
 	uint32_t streamTime;
-	amp_mutex_t mutex;
+	amp_semaphore_t mutex;
 	//IThreadJob interface for long jobs
 	void execute();
 	void threadAbort();

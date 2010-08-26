@@ -21,7 +21,7 @@
 #define VM_H
 
 #include "compat.h"
-#include <semaphore.h>
+#include <amp/amp.h>
 #include <vector>
 #include "swftypes.h"
 
@@ -50,7 +50,7 @@ public:
 class VirtualMachine
 {
 private:
-	sem_t mutex;
+	amp_semaphore_t mutex;
 	std::vector<STRING> ConstantPool;
 public:
 //	Stack stack;
