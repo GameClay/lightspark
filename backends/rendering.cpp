@@ -129,7 +129,7 @@ void RenderThread::requestInput()
 {
 	inputNeeded=true;
 	amp_semaphore_signal(render);
-	sem_wait(&inputDone);
+	amp_semaphore_wait(inputDone);
 }
 
 void RenderThread::glAcquireTempBuffer(number_t xmin, number_t xmax, number_t ymin, number_t ymax)
@@ -245,7 +245,7 @@ void* RenderThread::gtkplug_worker(RenderThread* th)
 	{
 		while(1)
 		{
-			sem_wait(&th->render);
+			amp_semaphore_wait(th->render);
 			Chronometer chronometer;
 			
 			if(th->resizeNeeded)
@@ -720,7 +720,7 @@ void* RenderThread::sdl_worker(RenderThread* th)
 		Chronometer chronometer;
 		while(1)
 		{
-			sem_wait(&th->render);
+			amp_semaphore_wait(th->render);
 			chronometer.checkpoint();
 
 			SDL_GL_SwapBuffers( );

@@ -54,7 +54,7 @@ ThreadPool::~ThreadPool()
 {
 	stop();
 	//Now abort any job that is still executing
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	for(int i=0;i<NUM_THREADS;i++)
 	{
 		if(curJobs[i])
@@ -87,10 +87,10 @@ void* ThreadPool::job_worker(void* t)
 
 	while(1)
 	{
-		sem_wait(&th->num_jobs);
+		amp_semaphore_wait(th->num_jobs);
 		if(th->stopFlag)
 			pthread_exit(0);
-		sem_wait(&th->mutex);
+		amp_semaphore_wait(th->mutex);
 		IThreadJob* myJob=th->jobs.front();
 		th->jobs.pop_front();
 		th->curJobs[index]=myJob;
@@ -110,7 +110,7 @@ void* ThreadPool::job_worker(void* t)
 		}
 		thisJob=NULL;
 
-		sem_wait(&th->mutex);
+		amp_semaphore_wait(th->mutex);
 		myJob->executing=false;
 		th->curJobs[index]=NULL;
 		if(myJob->destroyMe)
@@ -122,7 +122,7 @@ void* ThreadPool::job_worker(void* t)
 
 void ThreadPool::addJob(IThreadJob* j)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	jobs.push_back(j);
 	amp_semaphore_signal(mutex);
 	amp_semaphore_signal(num_jobs);

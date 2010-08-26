@@ -568,7 +568,7 @@ bool NetStream::isReady() const
 
 bool NetStream::lockIfReady()
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	bool ret=isReady();
 	if(!ret) //If the data is not valid so not release the lock to keep the condition
 		amp_semaphore_signal(mutex);
@@ -775,7 +775,7 @@ void NetStream::execute()
 		videoDecoder->waitFlushed();
 	}
 
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	sys->downloadManager->destroy(downloader);
 	downloader=NULL;
 	//This transition is critical, so the mutex is needed
@@ -795,7 +795,7 @@ void NetStream::execute()
 
 void NetStream::threadAbort()
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	if(downloader)
 		downloader->stop();
 	//Discard a frame, the decoder may be blocked on a full buffer

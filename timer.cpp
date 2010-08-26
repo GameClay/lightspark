@@ -114,7 +114,7 @@ void TimerThread::insertNewEvent_nolock(TimingEvent* e)
 
 void TimerThread::insertNewEvent(TimingEvent* e)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	insertNewEvent_nolock(e);
 	amp_semaphore_signal(mutex);
 }
@@ -134,15 +134,15 @@ void* TimerThread::timer_worker(TimerThread* th)
 	while(1)
 	{
 		//Wait until a time expires
-		sem_wait(&th->mutex);
+		amp_semaphore_wait(th->mutex);
 		//Check if there is any event
 		while(th->pendingEvents.empty())
 		{
 			amp_semaphore_signal(th->mutex);
-			sem_wait(&th->newEvent);
+			amp_semaphore_wait(th->newEvent);
 			if(th->stopped)
 				pthread_exit(0);
-			sem_wait(&th->mutex);
+			amp_semaphore_wait(th->mutex);
 		}
 
 		//Get expiration of first event
@@ -167,7 +167,7 @@ void* TimerThread::timer_worker(TimerThread* th)
 
 		//Note: it may happen that between the sem_timewait and this code another event gets inserted in the front. In this 
 		//case it's not an error to execute it now, as it's expiration time is the first anyway and before the one expired
-		sem_wait(&th->mutex);
+		amp_semaphore_wait(th->mutex);
 		TimingEvent* e=th->pendingEvents.front();
 		th->pendingEvents.pop_front();
 
@@ -219,7 +219,7 @@ void TimerThread::addWait(uint32_t waitTime, ITickJob* job)
 
 bool TimerThread::removeJob(ITickJob* job)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 
 	list<TimingEvent*>::iterator it=pendingEvents.begin();
 	bool first=true;

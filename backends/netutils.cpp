@@ -102,7 +102,7 @@ void Downloader::setLen(uint32_t l)
 
 void Downloader::setFailed()
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	failed=true;
 	if(waiting) //If we are waiting for some bytes, gives up and return EOF
 		amp_semaphore_signal(available);
@@ -131,7 +131,7 @@ void Downloader::append(uint8_t* buf, uint32_t added)
 			throw RunTimeException("Downloaded file is too big");
 		}
 	}
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	memcpy(buffer + tail,buf,added);
 	tail+=added;
 	if(waiting)
@@ -151,12 +151,12 @@ void Downloader::stop()
 
 void Downloader::wait()
 {
-	sem_wait(&terminated);
+	amp_semaphore_wait(terminated);
 }
 
 Downloader::int_type Downloader::underflow()
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	assert_and_throw(gptr()==egptr());
 	unsigned int firstIndex=tail;
 
@@ -171,7 +171,7 @@ Downloader::int_type Downloader::underflow()
 		{
 			waiting=true;
 			amp_semaphore_signal(mutex);
-			sem_wait(&available);
+			amp_semaphore_wait(available);
 			if(failed)
 			{
 				amp_semaphore_signal(mutex);
@@ -199,7 +199,7 @@ Downloader::int_type Downloader::underflow()
 Downloader::pos_type Downloader::seekpos(pos_type pos, std::ios_base::openmode mode)
 {
 	assert_and_throw(mode==std::ios_base::in);
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	setg((char*)buffer,(char*)buffer+pos,(char*)buffer+tail);
 	amp_semaphore_signal(mutex);
 	return pos;

@@ -51,12 +51,12 @@ void sync_stream::destroy()
 
 int sync_stream::provideBuffer(int limit)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	if(tail==head)
 	{
 		wait_notempty=true;
 		amp_semaphore_signal(mutex);
-		sem_wait(&notempty);
+		amp_semaphore_wait(notempty);
 		if(failed)
 			return 0;
 	}
@@ -86,12 +86,12 @@ int sync_stream::provideBuffer(int limit)
 
 uint32_t sync_stream::write(char* buf, int len)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	if(((tail-head+buf_size)%buf_size)==buf_size-1)
 	{
 		wait_notfull=true;
 		amp_semaphore_signal(mutex);
-		sem_wait(&notfull);
+		amp_semaphore_wait(notfull);
 		if(failed)
 			return 0;
 	}
@@ -122,7 +122,7 @@ uint32_t sync_stream::write(char* buf, int len)
 
 uint32_t sync_stream::getFree()
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	uint32_t freeBytes=(head-tail+buf_size-1)%buf_size;
 	amp_semaphore_signal(mutex);
 	return freeBytes;

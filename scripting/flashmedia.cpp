@@ -80,7 +80,7 @@ Video::~Video()
 
 void Video::inputRender()
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	if(netStream && netStream->lockIfReady())
 	{
 		//All operations here should be non blocking
@@ -111,7 +111,7 @@ void Video::Render()
 		initialized=true;
 	}
 
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	if(netStream && netStream->lockIfReady())
 	{
 		//All operations here should be non blocking
@@ -199,7 +199,7 @@ ASFUNCTIONBODY(Video,_setWidth)
 {
 	Video* th=Class<Video>::cast(obj);
 	assert_and_throw(argslen==1);
-	sem_wait(&th->mutex);
+	amp_semaphore_wait(th->mutex);
 	th->width=args[0]->toInt();
 	amp_semaphore_signal(th->mutex);
 	return NULL;
@@ -215,7 +215,7 @@ ASFUNCTIONBODY(Video,_setHeight)
 {
 	Video* th=Class<Video>::cast(obj);
 	assert_and_throw(argslen==1);
-	sem_wait(&th->mutex);
+	amp_semaphore_wait(th->mutex);
 	th->height=args[0]->toInt();
 	amp_semaphore_signal(th->mutex);
 	return NULL;
@@ -227,7 +227,7 @@ ASFUNCTIONBODY(Video,attachNetStream)
 	assert_and_throw(argslen==1);
 	if(args[0]->getObjectType()==T_NULL) //Drop the connection
 	{
-		sem_wait(&th->mutex);
+		amp_semaphore_wait(th->mutex);
 		th->netStream=NULL;
 		amp_semaphore_signal(th->mutex);
 		return NULL;
@@ -241,7 +241,7 @@ ASFUNCTIONBODY(Video,attachNetStream)
 	args[0]->incRef();
 
 	assert_and_throw(th->netStream==NULL);
-	sem_wait(&th->mutex);
+	amp_semaphore_wait(th->mutex);
 	th->netStream=Class<NetStream>::cast(args[0]);
 	amp_semaphore_signal(th->mutex);
 	return NULL;

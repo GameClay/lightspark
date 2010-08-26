@@ -30,7 +30,7 @@ Log::Log(LOG_LEVEL l)
 	{
 		cur_level=l;
 		valid=true;
-		sem_wait(&mutex);
+		amp_semaphore_wait(mutex);
 	}
 	else
 		valid=false;

@@ -178,7 +178,7 @@ SystemState::SystemState(ParseThread* p):RootMovieClip(NULL,true),parseThread(p)
 void SystemState::setDownloadedPath(const tiny_string& p)
 {
 	dumpedSWFPath=p;
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	if(waitingForDump)
 		fileDumpAvailable.signal();
 	amp_semaphore_signal(mutex);
@@ -396,7 +396,7 @@ void SystemState::setError(const string& c)
 
 void SystemState::setShutdownFlag()
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	if(currentVm)
 	{
 		ShutdownEvent* e=new ShutdownEvent;
@@ -412,7 +412,7 @@ void SystemState::setShutdownFlag()
 
 void SystemState::wait()
 {
-	sem_wait(&terminated);
+	amp_semaphore_wait(terminated);
 	SDL_Event event;
 	event.type = SDL_USEREVENT;
 	event.user.code = SHUTDOWN;
@@ -478,7 +478,7 @@ void SystemState::delayedCreation(SystemState* th)
 	gtk_widget_map(p.container);
 	p.window=GDK_WINDOW_XWINDOW(p.container->window);
 	XSync(p.display, False);
-	sem_wait(&th->mutex);
+	amp_semaphore_wait(th->mutex);
 	th->renderThread=new RenderThread(th, th->engine, &th->npapiParams);
 	th->inputThread=new InputThread(th, th->engine, &th->npapiParams);
 	//If the render rate is known start the render ticks
@@ -491,7 +491,7 @@ void SystemState::delayedCreation(SystemState* th)
 
 void SystemState::createEngines()
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	assert(renderThread==NULL && inputThread==NULL);
 #ifdef COMPILE_PLUGIN
 	//Check if we should fall back on gnash
@@ -504,7 +504,7 @@ void SystemState::createEngines()
 			fileDumpAvailable.wait();
 			if(shutdown)
 				return;
-			sem_wait(&mutex);
+			amp_semaphore_wait(mutex);
 		}
 		LOG(LOG_NO_INFO,"Invoking gnash!");
 		//Dump the cookies to a temporary file
@@ -595,7 +595,7 @@ void SystemState::createEngines()
 
 void SystemState::needsAVM2(bool n)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	assert(currentVm==NULL);
 	//Create the virtual machine if needed
 	if(n)
@@ -624,7 +624,7 @@ void SystemState::setParamsAndEngine(ENGINE e, NPAPI_params* p)
 
 void SystemState::setRenderRate(float rate)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	if(renderRate>=rate)
 	{
 		amp_semaphore_signal(mutex);
@@ -641,7 +641,7 @@ void SystemState::setRenderRate(float rate)
 void SystemState::tick()
 {
 	RootMovieClip::tick();
- 	sem_wait(&mutex);
+ 	amp_semaphore_wait(mutex);
 	list<ThreadProfile>::iterator it=profilingData.begin();
 	for(;it!=profilingData.end();it++)
 		it->tick();
@@ -677,7 +677,7 @@ bool SystemState::removeJob(ITickJob* job)
 
 ThreadProfile* SystemState::allocateProfiler(const lightspark::RGB& color)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	profilingData.push_back(ThreadProfile(color,100));
 	ThreadProfile* ret=&profilingData.back();
 	amp_semaphore_signal(mutex);
@@ -883,7 +883,7 @@ void ParseThread::wait()
 {
 	if(!isEnded)
 	{
-		sem_wait(&ended);
+		amp_semaphore_wait(ended);
 		isEnded=true;
 	}
 }
@@ -931,7 +931,7 @@ void RootMovieClip::Render()
 			break;
 
 		l.unlock();
-		sem_wait(&new_frame);
+		amp_semaphore_wait(new_frame);
 		if(parsingIsFailed)
 			return;
 		l.lock();
@@ -975,14 +975,14 @@ float RootMovieClip::getFrameRate() const
 
 void RootMovieClip::addToDictionary(DictionaryTag* r)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	dictionary.push_back(r);
 	amp_semaphore_signal(mutex);
 }
 
 void RootMovieClip::addToFrame(DisplayListTag* t)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	MovieClip::addToFrame(t);
 	amp_semaphore_signal(mutex);
 }
@@ -1048,7 +1048,7 @@ void RootMovieClip::setBackground(const RGB& bg)
 
 DictionaryTag* RootMovieClip::dictionaryLookup(int id)
 {
-	sem_wait(&mutex);
+	amp_semaphore_wait(mutex);
 	list< DictionaryTag*>::iterator it = dictionary.begin();
 	for(;it!=dictionary.end();it++)
 	{

@@ -1097,7 +1097,7 @@ bool ABCVm::addEvent(EventDispatcher* obj ,Event* ev)
 		return true;
 	}
 
-	sem_wait(&event_queue_mutex);
+	amp_semaphore_wait(event_queue_mutex);
 	if(obj)
 		obj->incRef();
 	ev->incRef();
@@ -1324,7 +1324,7 @@ void ABCVm::Run(ABCVm* th)
 	{
 		try
 		{
-			sem_wait(&th->sem_event_count);
+			amp_semaphore_wait(th->sem_event_count);
 			if(th->shuttingdown)
 				bailOut=true;
 			if(bailOut)
@@ -1336,7 +1336,7 @@ void ABCVm::Run(ABCVm* th)
 					LOG(LOG_NO_INFO,th->events_queue.size() << " events missing before exit");
 			}
 			Chronometer chronometer;
-			sem_wait(&th->event_queue_mutex);
+			amp_semaphore_wait(th->event_queue_mutex);
 			pair<EventDispatcher*,Event*> e=th->events_queue.front();
 			th->events_queue.pop_front();
 			amp_semaphore_signal(th->event_queue_mutex);

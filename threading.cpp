@@ -34,7 +34,7 @@ IThreadJob::IThreadJob():destroyMe(false),executing(false),aborting(false)
 IThreadJob::~IThreadJob()
 {
 	if(executing)
-		sem_wait(&terminated);
+		amp_semaphore_wait(terminated);
 	sem_destroy(&terminated);
 }
 
@@ -86,7 +86,7 @@ void Mutex::lock()
 		foundBusy++;
 	}
 
-	sem_wait(&sem);
+	amp_semaphore_wait(sem);
 }
 
 void Mutex::unlock()
@@ -108,7 +108,7 @@ Semaphore::~Semaphore()
 
 void Semaphore::wait()
 {
-	sem_wait(&sem);
+	amp_semaphore_wait(sem);
 }
 
 bool Semaphore::try_wait()

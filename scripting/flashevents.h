@@ -290,7 +290,7 @@ public:
 	}
 	void wait()
 	{
-		sem_wait(&s);
+		amp_semaphore_wait(s);
 	}
 };
 
