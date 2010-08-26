@@ -25,7 +25,7 @@
 #include <fstream>
 #include <list>
 #include <map>
-#include <semaphore.h>
+#include <amp/amp.h>
 #include <string>
 #include "swftypes.h"
 #include "frame.h"

@@ -22,8 +22,7 @@
 
 #include "compat.h"
 #include <deque>
-#include <pthread.h>
-#include <semaphore.h>
+#include <amp/amp.h>
 #include <stdlib.h>
 #include "threading.h"
 

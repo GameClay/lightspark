@@ -18,7 +18,7 @@
 **************************************************************************/
 
 #include <string>
-#include <pthread.h>
+#include <amp/amp.h>
 #include <algorithm>
 #include "scripting/abc.h"
 #include "scripting/flashdisplay.h"

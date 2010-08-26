@@ -21,7 +21,7 @@
 #define LOGGER_H
 
 #include "compat.h"
-#include <semaphore.h>
+#include <amp/amp.h>
 #include <iostream>
 
 enum LOG_LEVEL { LOG_NO_INFO=0, LOG_ERROR=1, LOG_NOT_IMPLEMENTED=2,LOG_CALLS=3,LOG_TRACE=4};

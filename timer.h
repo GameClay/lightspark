@@ -22,9 +22,8 @@
 
 #include "compat.h"
 #include <list>
-#include <pthread.h>
+#include <amp/amp.h>
 #include <time.h>
-#include <semaphore.h>
 #include <inttypes.h>
 #include "thread_pool.h"
 
