@@ -39,7 +39,7 @@ Log::Log(LOG_LEVEL l)
 Log::~Log()
 {
 	if(valid)
-		sem_post(&mutex);
+		amp_semaphore_signal(mutex);
 }
 
 std::ostream& Log::operator()()

@@ -68,7 +68,7 @@ void TimerThread::stop()
 	if(!stopped)
 	{
 		stopped=true;
-		sem_post(&newEvent);
+		amp_semaphore_signal(newEvent);
 	}
 }
 
@@ -95,7 +95,7 @@ void TimerThread::insertNewEvent_nolock(TimingEvent* e)
 	if(pendingEvents.empty() || (*it)->timing > e->timing)
 	{
 		pendingEvents.insert(it, e);
-		sem_post(&newEvent);
+		amp_semaphore_signal(newEvent);
 		return;
 	}
 	++it;
@@ -116,7 +116,7 @@ void TimerThread::insertNewEvent(TimingEvent* e)
 {
 	sem_wait(&mutex);
 	insertNewEvent_nolock(e);
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 //Unsafe debugging routine
@@ -138,7 +138,7 @@ void* TimerThread::timer_worker(TimerThread* th)
 		//Check if there is any event
 		while(th->pendingEvents.empty())
 		{
-			sem_post(&th->mutex);
+			amp_semaphore_signal(th->mutex);
 			sem_wait(&th->newEvent);
 			if(th->stopped)
 				pthread_exit(0);
@@ -149,7 +149,7 @@ void* TimerThread::timer_worker(TimerThread* th)
 		uint64_t timing=th->pendingEvents.front()->timing;
 		//Wait for the absolute time, or a newEvent signal
 		timespec tmpt=msecsToTimespec(timing);
-		sem_post(&th->mutex);
+		amp_semaphore_signal(th->mutex);
 		int ret=sem_timedwait(&th->newEvent, &tmpt);
 		if(th->stopped)
 			pthread_exit(0);
@@ -181,7 +181,7 @@ void* TimerThread::timer_worker(TimerThread* th)
 			destroyEvent=false;
 		}
 
-		sem_post(&th->mutex);
+		amp_semaphore_signal(th->mutex);
 
 		//Now execute the job
 		//NOTE: jobs may be invalid if they has been cancelled in the meantime
@@ -238,7 +238,7 @@ bool TimerThread::removeJob(ITickJob* job)
 
 	if(it==pendingEvents.end())
 	{
-		sem_post(&mutex);
+		amp_semaphore_signal(mutex);
 		return false;
 	}
 
@@ -257,7 +257,7 @@ bool TimerThread::removeJob(ITickJob* job)
 		delete e;
 	}
 
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 	return true;
 }
 

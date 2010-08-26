@@ -286,7 +286,7 @@ public:
 	EVENT_TYPE getEventType() { return SYNC; }
 	void sync()
 	{
-		sem_post(&s);
+		amp_semaphore_signal(s);
 	}
 	void wait()
 	{

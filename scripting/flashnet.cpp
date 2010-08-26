@@ -571,13 +571,13 @@ bool NetStream::lockIfReady()
 	sem_wait(&mutex);
 	bool ret=isReady();
 	if(!ret) //If the data is not valid so not release the lock to keep the condition
-		sem_post(&mutex);
+		amp_semaphore_signal(mutex);
 	return ret;
 }
 
 void NetStream::unlock()
 {
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void NetStream::execute()
@@ -790,7 +790,7 @@ void NetStream::execute()
 	delete audioDecoder;
 	audioDecoder=NULL;
 #endif
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void NetStream::threadAbort()
@@ -803,7 +803,7 @@ void NetStream::threadAbort()
 		videoDecoder->discardFrame();
 	if(audioDecoder)
 		audioDecoder->discardFrame();
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 ASFUNCTIONBODY(NetStream,_getBytesLoaded)

@@ -46,7 +46,7 @@ void ThreadPool::stop()
 	stopFlag=true;
 	//Signal an event for all the threads
 	for(int i=0;i<NUM_THREADS;i++)
-		sem_post(&num_jobs);
+		amp_semaphore_signal(num_jobs);
 
 }
 
@@ -60,7 +60,7 @@ ThreadPool::~ThreadPool()
 		if(curJobs[i])
 			curJobs[i]->stop();
 	}
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 
 	for(int i=0;i<NUM_THREADS;i++)
 	{
@@ -95,7 +95,7 @@ void* ThreadPool::job_worker(void* t)
 		th->jobs.pop_front();
 		th->curJobs[index]=myJob;
 		myJob->executing=true;
-		sem_post(&th->mutex);
+		amp_semaphore_signal(th->mutex);
 
 		assert(thisJob==NULL);
 		thisJob=myJob;
@@ -115,7 +115,7 @@ void* ThreadPool::job_worker(void* t)
 		th->curJobs[index]=NULL;
 		if(myJob->destroyMe)
 			delete myJob;
-		sem_post(&th->mutex);
+		amp_semaphore_signal(th->mutex);
 	}
 	return NULL;
 }
@@ -124,7 +124,7 @@ void ThreadPool::addJob(IThreadJob* j)
 {
 	sem_wait(&mutex);
 	jobs.push_back(j);
-	sem_post(&mutex);
-	sem_post(&num_jobs);
+	amp_semaphore_signal(mutex);
+	amp_semaphore_signal(num_jobs);
 }
 

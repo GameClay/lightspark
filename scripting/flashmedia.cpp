@@ -99,7 +99,7 @@ void Video::inputRender()
 		ma.unapply();
 		netStream->unlock();
 	}
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void Video::Render()
@@ -154,7 +154,7 @@ void Video::Render()
 		ma.unapply();
 		netStream->unlock();
 	}
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 bool Video::getBounds(number_t& xmin, number_t& xmax, number_t& ymin, number_t& ymax) const
@@ -201,7 +201,7 @@ ASFUNCTIONBODY(Video,_setWidth)
 	assert_and_throw(argslen==1);
 	sem_wait(&th->mutex);
 	th->width=args[0]->toInt();
-	sem_post(&th->mutex);
+	amp_semaphore_signal(th->mutex);
 	return NULL;
 }
 
@@ -217,7 +217,7 @@ ASFUNCTIONBODY(Video,_setHeight)
 	assert_and_throw(argslen==1);
 	sem_wait(&th->mutex);
 	th->height=args[0]->toInt();
-	sem_post(&th->mutex);
+	amp_semaphore_signal(th->mutex);
 	return NULL;
 }
 
@@ -229,7 +229,7 @@ ASFUNCTIONBODY(Video,attachNetStream)
 	{
 		sem_wait(&th->mutex);
 		th->netStream=NULL;
-		sem_post(&th->mutex);
+		amp_semaphore_signal(th->mutex);
 		return NULL;
 	}
 
@@ -243,7 +243,7 @@ ASFUNCTIONBODY(Video,attachNetStream)
 	assert_and_throw(th->netStream==NULL);
 	sem_wait(&th->mutex);
 	th->netStream=Class<NetStream>::cast(args[0]);
-	sem_post(&th->mutex);
+	amp_semaphore_signal(th->mutex);
 	return NULL;
 }
 

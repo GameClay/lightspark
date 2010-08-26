@@ -102,7 +102,7 @@ void RootMovieClip::parsingFailed()
 {
 	//The parsing is failed, we have no change to be ever valid
 	parsingIsFailed=true;
-	sem_post(&new_frame);
+	amp_semaphore_signal(new_frame);
 }
 
 void RootMovieClip::bindToName(const tiny_string& n)
@@ -181,7 +181,7 @@ void SystemState::setDownloadedPath(const tiny_string& p)
 	sem_wait(&mutex);
 	if(waitingForDump)
 		fileDumpAvailable.signal();
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void SystemState::setUrl(const tiny_string& url)
@@ -406,8 +406,8 @@ void SystemState::setShutdownFlag()
 	//Set the flag after sending the event, otherwise it's ignored by the VM
 	shutdown=true;
 
-	sem_post(&terminated);
-	sem_post(&mutex);
+	amp_semaphore_signal(terminated);
+	amp_semaphore_signal(mutex);
 }
 
 void SystemState::wait()
@@ -484,7 +484,7 @@ void SystemState::delayedCreation(SystemState* th)
 	//If the render rate is known start the render ticks
 	if(th->renderRate)
 		th->startRenderTicks();
-	sem_post(&th->mutex);
+	amp_semaphore_signal(th->mutex);
 }
 
 #endif
@@ -500,7 +500,7 @@ void SystemState::createEngines()
 		if(dumpedSWFPath.len()==0) //The path is not known yet
 		{
 			waitingForDump=true;
-			sem_post(&mutex);
+			amp_semaphore_signal(mutex);
 			fileDumpAvailable.wait();
 			if(shutdown)
 				return;
@@ -560,7 +560,7 @@ void SystemState::createEngines()
 		}
 		else //Parent process scope
 		{
-			sem_post(&mutex);
+			amp_semaphore_signal(mutex);
 			//Engines should not be started, stop everything
 			stopEngines();
 			return;
@@ -590,7 +590,7 @@ void SystemState::createEngines()
 		if(renderRate)
 			startRenderTicks();
 	}
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void SystemState::needsAVM2(bool n)
@@ -608,18 +608,18 @@ void SystemState::needsAVM2(bool n)
 		vmVersion=AVM1;
 	if(engine)
 		addJob(new EngineCreator);
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void SystemState::setParamsAndEngine(ENGINE e, NPAPI_params* p)
 {
-	sem_wait(&mutex);
+	amp_semaphore_signal(mutex);
 	if(p)
 		npapiParams=*p;
 	engine=e;
 	if(vmVersion)
 		addJob(new EngineCreator);
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void SystemState::setRenderRate(float rate)
@@ -627,7 +627,7 @@ void SystemState::setRenderRate(float rate)
 	sem_wait(&mutex);
 	if(renderRate>=rate)
 	{
-		sem_post(&mutex);
+		amp_semaphore_signal(mutex);
 		return;
 	}
 	
@@ -635,7 +635,7 @@ void SystemState::setRenderRate(float rate)
 	renderRate=rate;
 	if(renderThread)
 		startRenderTicks();
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void SystemState::tick()
@@ -645,7 +645,7 @@ void SystemState::tick()
 	list<ThreadProfile>::iterator it=profilingData.begin();
 	for(;it!=profilingData.end();it++)
 		it->tick();
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 	//Enter frame should be sent to the stage too
 	if(stage->hasEventListener("enterFrame"))
 	{
@@ -680,7 +680,7 @@ ThreadProfile* SystemState::allocateProfiler(const lightspark::RGB& color)
 	sem_wait(&mutex);
 	profilingData.push_back(ThreadProfile(color,100));
 	ThreadProfile* ret=&profilingData.back();
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 	return ret;
 }
 
@@ -870,7 +870,7 @@ void ParseThread::execute()
 	}
 	pt=NULL;
 
-	sem_post(&ended);
+	amp_semaphore_signal(ended);
 }
 
 void ParseThread::threadAbort()
@@ -977,14 +977,14 @@ void RootMovieClip::addToDictionary(DictionaryTag* r)
 {
 	sem_wait(&mutex);
 	dictionary.push_back(r);
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void RootMovieClip::addToFrame(DisplayListTag* t)
 {
 	sem_wait(&mutex);
 	MovieClip::addToFrame(t);
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 }
 
 void RootMovieClip::labelCurrentFrame(const STRING& name)
@@ -1024,7 +1024,7 @@ void RootMovieClip::commitFrame(bool another)
 		//When the first frame is committed the frame rate is known
 		sys->addTick(1000/frameRate,this);
 	}
-	sem_post(&new_frame);
+	amp_semaphore_signal(new_frame);
 }
 
 void RootMovieClip::revertFrame()
@@ -1058,11 +1058,11 @@ DictionaryTag* RootMovieClip::dictionaryLookup(int id)
 	if(it==dictionary.end())
 	{
 		LOG(LOG_ERROR,"No such Id on dictionary " << id);
-		sem_post(&mutex);
+		amp_semaphore_signal(mutex);
 		throw RunTimeException("Could not find an object on the dictionary");
 	}
 	DictionaryTag* ret=*it;
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 	return ret;
 }
 

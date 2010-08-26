@@ -105,9 +105,9 @@ void Downloader::setFailed()
 	sem_wait(&mutex);
 	failed=true;
 	if(waiting) //If we are waiting for some bytes, gives up and return EOF
-		sem_post(&available);
+		amp_semaphore_signal(available);
 	else
-		sem_post(&mutex);
+		amp_semaphore_signal(mutex);
 }
 
 void Downloader::append(uint8_t* buf, uint32_t added)
@@ -137,16 +137,16 @@ void Downloader::append(uint8_t* buf, uint32_t added)
 	if(waiting)
 	{
 		waiting=false;
-		sem_post(&available);
+		amp_semaphore_signal(available);
 	}
 	else
-		sem_post(&mutex);
+		amp_semaphore_signal(mutex);
 }
 
 void Downloader::stop()
 {
 	failed=true;
-	sem_post(&available);
+	amp_semaphore_signal(available);
 }
 
 void Downloader::wait()
@@ -164,17 +164,17 @@ Downloader::int_type Downloader::underflow()
 	{
 		if(failed || (tail==len && len!=0))
 		{
-			sem_post(&mutex);
+			amp_semaphore_signal(mutex);
 			return -1;
 		}
 		else //More bytes should follow
 		{
 			waiting=true;
-			sem_post(&mutex);
+			amp_semaphore_signal(mutex);
 			sem_wait(&available);
 			if(failed)
 			{
-				sem_post(&mutex);
+				amp_semaphore_signal(mutex);
 				return -1;
 			}
 		}
@@ -185,13 +185,13 @@ Downloader::int_type Downloader::underflow()
 
 	if(failed)
 	{
-		sem_post(&mutex);
+		amp_semaphore_signal(mutex);
 		return -1;
 	}
 
 	//We have some bytes now, let's use them
 	setg((char*)buffer,cur,(char*)buffer+tail);
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 	//Cast to unsigned, otherwise 0xff would become eof
 	return (unsigned char)buffer[firstIndex];
 }
@@ -201,7 +201,7 @@ Downloader::pos_type Downloader::seekpos(pos_type pos, std::ios_base::openmode m
 	assert_and_throw(mode==std::ios_base::in);
 	sem_wait(&mutex);
 	setg((char*)buffer,(char*)buffer+pos,(char*)buffer+tail);
-	sem_post(&mutex);
+	amp_semaphore_signal(mutex);
 	return pos;
 }
 
@@ -276,7 +276,7 @@ void CurlDownloader::execute()
 	setFailed();
 	LOG(LOG_ERROR,"CURL not enabled in this build. Downloader will always fail.");
 #endif
-	sem_post(&(Downloader::terminated));
+	amp_semaphore_signal(Downloader::terminated);
 }
 
 int CurlDownloader::progress_callback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
@@ -393,6 +393,6 @@ void LocalDownloader::execute()
 				LOG(LOG_ERROR, "LocalDownloader::execute: could not open local file: " << url.raw_buf());
 		}
 	}
-	sem_post(&(Downloader::terminated));
+	amp_semaphore_signal(Downloader::terminated);
 }
 

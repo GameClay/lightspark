@@ -77,7 +77,7 @@ NPDownloader::NPDownloader(NPP i, const lightspark::tiny_string& u):instance(i),
 
 void NPDownloader::terminate()
 {
-	sem_post(&terminated);
+	amp_semaphore_signal(terminated);
 }
 
 void NPDownloader::dlStartCallback(void* t)

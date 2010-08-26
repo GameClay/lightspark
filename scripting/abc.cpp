@@ -964,7 +964,7 @@ void ABCVm::shutdown()
 {
 	//signal potentially blocking semaphores
 	shuttingdown=true;
-	sem_post(&sem_event_count);
+	amp_semaphore_signal(sem_event_count);
 	wait();
 }
 
@@ -1102,8 +1102,8 @@ bool ABCVm::addEvent(EventDispatcher* obj ,Event* ev)
 		obj->incRef();
 	ev->incRef();
 	events_queue.push_back(pair<EventDispatcher*,Event*>(obj, ev));
-	sem_post(&event_queue_mutex);
-	sem_post(&sem_event_count);
+	amp_semaphore_signal(event_queue_mutex);
+	amp_semaphore_signal(sem_event_count);
 	return true;
 }
 
@@ -1339,7 +1339,7 @@ void ABCVm::Run(ABCVm* th)
 			sem_wait(&th->event_queue_mutex);
 			pair<EventDispatcher*,Event*> e=th->events_queue.front();
 			th->events_queue.pop_front();
-			sem_post(&th->event_queue_mutex);
+			amp_semaphore_signal(th->event_queue_mutex);
 			th->handleEvent(e);
 			if(th->shuttingdown)
 				bailOut=true;

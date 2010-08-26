@@ -43,7 +43,7 @@ void RenderThread::wait()
 		return;
 	terminated=true;
 	//Signal potentially blocking semaphore
-	sem_post(&render);
+	amp_semaphore_signal(render);
 	int ret=pthread_join(t,NULL);
 	assert_and_throw(ret==0);
 }
@@ -128,7 +128,7 @@ void RenderThread::releaseResourceMutex()
 void RenderThread::requestInput()
 {
 	inputNeeded=true;
-	sem_post(&render);
+	amp_semaphore_signal(render);
 	sem_wait(&inputDone);
 }
 
@@ -268,7 +268,7 @@ void* RenderThread::gtkplug_worker(RenderThread* th)
 				th->inputTex.bind();
 				glGetTexImage(GL_TEXTURE_2D,0,GL_BGRA,GL_UNSIGNED_BYTE,th->interactive_buffer);
 				th->inputNeeded=false;
-				sem_post(&th->inputDone);
+				amp_semaphore_signal(th->inputDone);
 			}
 
 			//Before starting rendering, cleanup all the request arrived in the meantime
@@ -683,7 +683,7 @@ void RenderThread::requestResize(uint32_t w, uint32_t h)
 	newWidth=w;
 	newHeight=h;
 	resizeNeeded=true;
-	sem_post(&render);
+	amp_semaphore_signal(render);
 }
 
 void* RenderThread::sdl_worker(RenderThread* th)
@@ -744,7 +744,7 @@ void* RenderThread::sdl_worker(RenderThread* th)
 				th->inputTex.bind();
 				glGetTexImage(GL_TEXTURE_2D,0,GL_BGRA,GL_UNSIGNED_BYTE,th->interactive_buffer);
 				th->inputNeeded=false;
-				sem_post(&th->inputDone);
+				amp_semaphore_signal(th->inputDone);
 			}
 
 			//Before starting rendering, cleanup all the request arrived in the meantime
@@ -900,7 +900,7 @@ void* RenderThread::sdl_worker(RenderThread* th)
 
 void RenderThread::draw()
 {
-	sem_post(&render);
+	amp_semaphore_signal(render);
 	time_d = compat_get_current_time_ms();
 	uint64_t diff=time_d-time_s;
 	if(diff>1000)

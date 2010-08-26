@@ -50,7 +50,7 @@ void IThreadJob::run()
 		LOG(LOG_NOT_IMPLEMENTED,"Job terminated");
 	}
 
-	sem_post(&terminated);
+	amp_semaphore_signal(terminated);
 }
 
 void IThreadJob::stop()
@@ -91,7 +91,7 @@ void Mutex::lock()
 
 void Mutex::unlock()
 {
-	sem_post(&sem);
+	amp_semaphore_signal(sem);
 }
 
 Semaphore::Semaphore(uint32_t init)//:blocked(0),maxBlocked(max)
@@ -118,5 +118,5 @@ bool Semaphore::try_wait()
 
 void Semaphore::signal()
 {
-	sem_post(&sem);
+	amp_semaphore_signal(sem);
 }
