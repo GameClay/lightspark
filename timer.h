@@ -43,7 +43,7 @@ uint64_t timespecToUsecs(timespec t);
 uint64_t timespecToMsecs(timespec t);
 timespec msecsToTimespec(uint64_t time);
 
-typedef void* (*thread_worker)(void*);
+typedef void (*thread_worker)(void*);
 class TimerThread
 {
 private:

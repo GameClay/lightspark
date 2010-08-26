@@ -64,7 +64,7 @@ ThreadPool::~ThreadPool()
 
 	for(int i=0;i<NUM_THREADS;i++)
 	{
-		if(amp_thread_join_and_destroy(threads[i],AMP_DEFAULT_ALLOCATOR)!=0)
+		if(amp_thread_join_and_destroy(&threads[i],AMP_DEFAULT_ALLOCATOR)!=0)
 			LOG(LOG_ERROR,"amp_thread_join_and_destroy failed in ~ThreadPool");
 	}
 
@@ -72,7 +72,7 @@ ThreadPool::~ThreadPool()
 	amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
 }
 
-void* ThreadPool::job_worker(void* t)
+void ThreadPool::job_worker(void* t)
 {
 	ThreadPool* th=static_cast<ThreadPool*>(t);
 	sys=th->m_sys;
@@ -117,7 +117,6 @@ void* ThreadPool::job_worker(void* t)
 			delete myJob;
 		amp_semaphore_signal(th->mutex);
 	}
-	return NULL;
 }
 
 void ThreadPool::addJob(IThreadJob* j)

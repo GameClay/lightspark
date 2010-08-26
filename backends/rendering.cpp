@@ -171,7 +171,7 @@ void RenderThread::glBlitTempBuffer(number_t xmin, number_t xmax, number_t ymin,
 }
 
 #ifdef COMPILE_PLUGIN
-void* RenderThread::gtkplug_worker(RenderThread* th)
+void RenderThread::gtkplug_worker(RenderThread* th)
 {
 	sys=th->m_sys;
 	rt=th;
@@ -410,7 +410,6 @@ void* RenderThread::gtkplug_worker(RenderThread* th)
 	glXMakeCurrent(d,None,NULL);
 	glXDestroyContext(d,th->mContext);
 	XCloseDisplay(d);
-	return NULL;
 }
 #endif
 
@@ -686,7 +685,7 @@ void RenderThread::requestResize(uint32_t w, uint32_t h)
 	amp_semaphore_signal(render);
 }
 
-void* RenderThread::sdl_worker(RenderThread* th)
+void RenderThread::sdl_worker(RenderThread* th)
 {
 	sys=th->m_sys;
 	rt=th;
@@ -895,7 +894,6 @@ void* RenderThread::sdl_worker(RenderThread* th)
 		sys->setError(e.cause);
 	}
 	th->commonGLDeinit();
-	return NULL;
 }
 
 void RenderThread::draw()

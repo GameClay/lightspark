@@ -128,7 +128,7 @@ void TimerThread::dumpJobs()
 		cout << (*it)->job << endl;
 }
 
-void* TimerThread::timer_worker(TimerThread* th)
+void TimerThread::timer_worker(TimerThread* th)
 {
 	sys=th->m_sys;
 	while(1)

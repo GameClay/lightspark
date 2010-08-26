@@ -28,7 +28,7 @@
 namespace lightspark
 {
 
-typedef void* (*thread_worker)(void*);
+typedef void (*thread_worker)(void*);
 
 class Mutex
 {

@@ -43,7 +43,7 @@ private:
 	IThreadJob* curJobs[NUM_THREADS];
 	std::deque<IThreadJob*> jobs;
 	amp_semaphore_t num_jobs;
-	static void* job_worker(void*);
+	static void job_worker(void*);
 	SystemState* m_sys;
 	bool stopFlag;
 public:
