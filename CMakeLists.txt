@@ -241,9 +241,6 @@ SET(LIBAMP_COMMON_SOURCES
 	amp/src/c/amp/amp_memory.c
 	amp/src/c/amp/amp_mutex_common.c
 	amp/src/c/amp/amp_platform_common.c
-	amp/src/c/amp/amp_platform_sysconf.c
-	amp/src/c/amp/amp_platform_sysctl.c
-	amp/src/c/amp/amp_platform_unknown.c
 	amp/src/c/amp/amp_semaphore_common.c
 	amp/src/c/amp/amp_thread_array.c
 	amp/src/c/amp/amp_thread_common.c
@@ -253,7 +250,6 @@ SET(LIBAMP_COMMON_SOURCES
 SET(LIBAMP_POSIX_SOURCES
 	amp/src/c/amp/amp_condition_variable_pthreads.c
 	amp/src/c/amp/amp_mutex_pthreads.c
-	amp/src/c/amp/amp_platform_gnuc.c
 	amp/src/c/amp/amp_thread_local_slot_pthreads.c
 	amp/src/c/amp/amp_thread_pthreads.c
 )
@@ -261,10 +257,12 @@ SET(LIBAMP_POSIX_SOURCES
 # Not using 'amp_semaphore_posix_1003_1b.c', using 'amp_semaphore_pthreads.c' instead
 SET(LIBAMP_UNIX_SOURCES
 	amp/src/c/amp/amp_semaphore_pthreads.c
+	amp/src/c/amp/amp_platform_gnuc.c
 )
 
 SET(LIBAMP_MAC_SOURCES
 	amp/src/c/amp/amp_semaphore_libdispatch.c
+	amp/src/c/amp/amp_platform_sysctl.c
 )
 
 SET(LIBAMP_WIN_SOURCES
@@ -337,7 +335,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 
 # add libamp to liblightspark target
-SET(LIBSPARK_SOURCES ${LIBSPARK_SOURCES} ${LIBAMP_SOURCES})
+SET(LIBSPARK_SOURCES ${LIBSPARK_SOURCES} ${LIBAMP_COMMON_SOURCES})
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/amp/src/c)
 IF (UNIX)
 	SET(LIBSPARK_SOURCES ${LIBSPARK_SOURCES} ${LIBAMP_POSIX_SOURCES} ${LIBAMP_UNIX_SOURCES})
