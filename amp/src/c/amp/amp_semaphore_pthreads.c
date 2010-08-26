@@ -246,15 +246,11 @@ int amp_semaphore_trywait_PROPOSED(amp_semaphore_t semaphore)
 			retval = AMP_BUSY; /* Semaphore is locked */
         }
         else {
-		    retval = pthread_cond_wait(&semaphore->a_thread_can_pass, 
-                                             &semaphore->mutex);
-            assert(0 == retval); /* Programming error */
-		}
-		
-        if (AMP_ERROR != retval) {
-            --(semaphore->count);
-        } else {
-            retval = AMP_ERROR;
+            if (AMP_SUCCESS == retval) {
+                --(semaphore->count);
+            } else {
+                retval = AMP_ERROR;
+            }
         }
     }
     int const munlock_retval = pthread_mutex_unlock(&semaphore->mutex);
