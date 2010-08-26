@@ -233,9 +233,9 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_PROCESS
 ENDIF ()
 
 # libamp sources
+# Not using 'amp_barrier_generic_broadcast.c', using 'amp_barrier_generic_signal.c' instead 
 SET(LIBAMP_COMMON_SOURCES 
 	amp/src/c/amp/amp_barrier_common.c
-	#amp/src/c/amp/amp_barrier_generic_broadcast.c # using generic signal
 	amp/src/c/amp/amp_barrier_generic_signal.c
 	amp/src/c/amp/amp_condition_variable_common.c
 	amp/src/c/amp/amp_memory.c
@@ -254,11 +254,17 @@ SET(LIBAMP_POSIX_SOURCES
 	amp/src/c/amp/amp_condition_variable_pthreads.c
 	amp/src/c/amp/amp_mutex_pthreads.c
 	amp/src/c/amp/amp_platform_gnuc.c
-	#amp/src/c/amp/amp_semaphore_libdispatch.c   # using amp_semaphore_pthreads, dispatch is mac only
-	#amp/src/c/amp/amp_semaphore_posix_1003_1b.c # using amp_semaphore_pthreads
-	amp/src/c/amp/amp_semaphore_pthreads.c
 	amp/src/c/amp/amp_thread_local_slot_pthreads.c
 	amp/src/c/amp/amp_thread_pthreads.c
+)
+
+# Not using 'amp_semaphore_posix_1003_1b.c', using 'amp_semaphore_pthreads.c' instead
+SET(LIBAMP_UNIX_SOURCES
+	amp/src/c/amp/amp_semaphore_pthreads.c
+)
+
+SET(LIBAMP_MAC_SOURCES
+	amp/src/c/amp/amp_semaphore_libdispatch.c
 )
 
 SET(LIBAMP_WIN_SOURCES
@@ -334,7 +340,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 SET(LIBSPARK_SOURCES ${LIBSPARK_SOURCES} ${LIBAMP_SOURCES})
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/amp/src/c)
 IF (UNIX)
-	SET(LIBSPARK_SOURCES ${LIBSPARK_SOURCES} ${LIBAMP_POSIX_SOURCES})
+	SET(LIBSPARK_SOURCES ${LIBSPARK_SOURCES} ${LIBAMP_POSIX_SOURCES} ${LIBAMP_UNIX_SOURCES})
 	ADD_DEFINITIONS(-DAMP_USE_PTHREADS -DAMP_USE_GENERIC_SIGNAL_BARRIERS -D_GNU_SOURCE)
 	SET(Threads_LIBRARIES ${Threads_LIBRARIES} pthread) 
 ELSEIF (WIN32)
