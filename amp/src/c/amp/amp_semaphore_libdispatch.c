@@ -129,3 +129,9 @@ int amp_semaphore_signal(amp_semaphore_t semaphore)
     return AMP_SUCCESS;
 }
 
+int amp_semaphore_trywait_PROPOSED(amp_semaphore_t semaphore)
+{
+    /* TODO when on the mac */
+    return AMP_ERROR;
+}
+

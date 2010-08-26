@@ -231,3 +231,36 @@ int amp_semaphore_signal(amp_semaphore_t semaphore)
 }
 
 
+int amp_semaphore_trywait_PROPOSED(amp_semaphore_t semaphore)
+{    
+    assert(NULL != semaphore);
+    
+    int retval = AMP_SUCCESS;
+    int const mlock_retval = pthread_mutex_lock(&semaphore->mutex);
+    if (0 != mlock_retval) {
+        assert(0); /* Programming error */
+        return AMP_ERROR;
+    }
+    {
+        if (0 >= semaphore->count) {
+			retval = AMP_BUSY; /* Semaphore is locked */
+        }
+        else {
+		    retval = pthread_cond_wait(&semaphore->a_thread_can_pass, 
+                                             &semaphore->mutex);
+            assert(0 == retval); /* Programming error */
+		}
+		
+        if (AMP_ERROR != retval) {
+            --(semaphore->count);
+        } else {
+            retval = AMP_ERROR;
+        }
+    }
+    int const munlock_retval = pthread_mutex_unlock(&semaphore->mutex);
+    assert(0 == munlock_retval);
+    (void)munlock_retval;
+    
+    return retval;
+}
+

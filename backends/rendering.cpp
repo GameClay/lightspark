@@ -273,7 +273,7 @@ void RenderThread::gtkplug_worker(RenderThread* th)
 
 			//Before starting rendering, cleanup all the request arrived in the meantime
 			int fakeRenderCount=0;
-			while(0)//sem_trywait(&th->render)==0)// HACK DO NOT PUSH
+			while(amp_semaphore_trywait(&th->render)==AMP_SUCCESS)
 			{
 				if(th->m_sys->isShuttingDown())
 					break;
@@ -748,7 +748,7 @@ void RenderThread::sdl_worker(RenderThread* th)
 
 			//Before starting rendering, cleanup all the request arrived in the meantime
 			int fakeRenderCount=0;
-			while(0)//sem_trywait(&th->render)==0)// HACK DO NOT PUSH
+			while(amp_semaphore_trywait(&th->render)==AMP_SUCCESS)
 			{
 				if(th->m_sys->isShuttingDown())
 					break;
