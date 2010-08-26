@@ -187,7 +187,7 @@ void* InputThread::sdl_worker(InputThread* th)
 						th->m_sys->setShutdownFlag();
 						if(th->m_sys->currentVm)
 							LOG(LOG_CALLS,"We still miss " << sys->currentVm->getEventQueueSize() << " events");
-						pthread_exit(0);
+						amp_thread_raw_exit();
 						break;
 					case SDLK_s:
 						th->m_sys->state.stop_FP=true;
@@ -263,7 +263,7 @@ void* InputThread::sdl_worker(InputThread* th)
 				th->m_sys->setShutdownFlag();
 				if(th->m_sys->currentVm)
 					LOG(LOG_CALLS,"We still miss " << sys->currentVm->getEventQueueSize() << " events");
-				pthread_exit(0);
+				amp_thread_raw_exit();
 				break;
 			}
 		}

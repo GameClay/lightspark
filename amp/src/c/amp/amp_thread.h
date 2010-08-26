@@ -177,17 +177,18 @@ extern "C" {
      * in use.
      */
     int amp_thread_yield(void);
-	
+    
+    
 	/**
 	 * Terminates the calling thread
 	 *
 	 * @return This function can not return a value.
 	 *
-	 * TODO: @todo Decide on way to retrieve thread exit code
+	 * @attention This function has different behavior depending on 
+	 *            the operating system. Some will call destructors, 
+	 *            and some will not.
 	 */
-	 void amp_thread_exit(void);
-    
-    
+	void amp_thread_raw_exit(void);
 
 #if defined(__cplusplus)
 } /* extern "C" */

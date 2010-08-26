@@ -90,7 +90,7 @@ void ThreadPool::job_worker(void* t)
 	{
 		amp_semaphore_wait(th->num_jobs);
 		if(th->stopFlag)
-			pthread_exit(0);
+			amp_thread_raw_exit();
 		amp_semaphore_wait(th->mutex);
 		IThreadJob* myJob=th->jobs.front();
 		th->jobs.pop_front();

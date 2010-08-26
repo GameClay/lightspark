@@ -141,7 +141,7 @@ void TimerThread::timer_worker(TimerThread* th)
 			amp_semaphore_signal(th->mutex);
 			amp_semaphore_wait(th->newEvent);
 			if(th->stopped)
-				pthread_exit(0);
+				amp_thread_raw_exit();
 			amp_semaphore_wait(th->mutex);
 		}
 
@@ -152,7 +152,7 @@ void TimerThread::timer_worker(TimerThread* th)
 		amp_semaphore_signal(th->mutex);
 		int ret=0;//sem_timedwait(&th->newEvent, &tmpt);// HACK DO NOT PUSH
 		if(th->stopped)
-			amp_thread_exit(0);
+			amp_thread_raw_exit();
 
 		if(ret==0)
 			continue;
