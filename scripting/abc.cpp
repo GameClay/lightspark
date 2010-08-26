@@ -980,7 +980,7 @@ void ABCVm::wait()
 {
 	if(!terminated)
 	{
-		if(amp_thread_join_and_destroy(t,AMP_DEFAULT_ALLOCATOR)!=0)
+		if(amp_thread_join_and_destroy(&t,AMP_DEFAULT_ALLOCATOR)!=0)
 		{
 			LOG(LOG_ERROR,"amp_thread_join_and_destroy in ABCVm failed");
 		}
