@@ -55,8 +55,8 @@ RenderThread::RenderThread(SystemState* s,ENGINE e,void* params):m_sys(s),termin
 {
 	LOG(LOG_NO_INFO,"RenderThread this=" << this);
 	m_sys=s;
-	sem_init(&render,0,0);
-	sem_init(&inputDone,0,0);
+	amp_semaphore_create(&render,AMP_DEFAULT_ALLOCATOR,0);
+	amp_semaphore_create(&inputDone,AMP_DEFAULT_ALLOCATOR,0);
 
 #ifdef WIN32
 	fontPath = "TimesNewRoman.ttf";

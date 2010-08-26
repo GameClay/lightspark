@@ -53,7 +53,7 @@ void Log::initLogging(LOG_LEVEL l)
 	if(!loggingInited)
 	{
 		loggingInited=true;
-		sem_init(&mutex,0,1);
+		amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
 		log_level=l;
 	}
 }

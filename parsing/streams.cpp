@@ -30,9 +30,9 @@ using namespace std;
 sync_stream::sync_stream():head(0),tail(0),wait_notfull(false),wait_notempty(false),buf_size(1024*1024),failed(false)
 {
 	buffer=new char[buf_size];
-	sem_init(&mutex,0,1);
-	sem_init(&notfull,0,0);
-	sem_init(&notempty,0,0);
+	amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
+	amp_semaphore_create(&notfull,AMP_DEFAULT_ALLOCATOR,0);
+	amp_semaphore_create(&notempty,AMP_DEFAULT_ALLOCATOR,0);
 }
 
 sync_stream::~sync_stream()

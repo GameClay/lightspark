@@ -57,8 +57,8 @@ timespec lightspark::msecsToTimespec(uint64_t time)
 
 TimerThread::TimerThread(SystemState* s):m_sys(s),currentJob(NULL),stopped(false)
 {
-	sem_init(&mutex,0,1);
-	sem_init(&newEvent,0,0);
+	amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
+	amp_semaphore_create(&newEvent,AMP_DEFAULT_ALLOCATOR,0);
 
 	pthread_create(&t,NULL,(thread_worker)timer_worker,this);
 }

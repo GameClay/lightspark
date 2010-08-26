@@ -56,7 +56,7 @@ private:
 public:
 	Video():width(320),height(240),videoWidth(0),videoHeight(0),initialized(false),videoTexture(false),netStream(NULL)
 	{
-		sem_init(&mutex,0,1);
+		amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
 	}
 	~Video();
 	static void sinit(Class_base*);

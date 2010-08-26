@@ -948,8 +948,8 @@ ABCContext::ABCContext(istream& in)
 
 ABCVm::ABCVm(SystemState* s):m_sys(s),terminated(false),shuttingdown(false)
 {
-	sem_init(&event_queue_mutex,0,1);
-	sem_init(&sem_event_count,0,0);
+	amp_semaphore_create(&event_queue_mutex,AMP_DEFAULT_ALLOCATOR,1);
+	amp_semaphore_create(&sem_event_count,AMP_DEFAULT_ALLOCATOR,0);
 	m_sys=s;
 	int_manager=new Manager(15);
 	number_manager=new Manager(15);

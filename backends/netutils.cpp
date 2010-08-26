@@ -70,9 +70,9 @@ Downloader::~Downloader()
 
 Downloader::Downloader():buffer(NULL),allowBufferRealloc(false),len(0),tail(0),waiting(false),failed(false)
 {
-	sem_init(&available,0,0);
-	sem_init(&mutex,0,1);
-	sem_init(&terminated,0,0);
+	amp_semaphore_create(&available,AMP_DEFAULT_ALLOCATOR,0);
+	amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
+	amp_semaphore_create(&terminated,AMP_DEFAULT_ALLOCATOR,0);
 }
 
 void Downloader::setLen(uint32_t l)

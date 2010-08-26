@@ -398,7 +398,7 @@ ASFUNCTIONBODY(NetConnection,_getUri)
 
 NetStream::NetStream():frameRate(0),tickStarted(false),downloader(NULL),videoDecoder(NULL),audioDecoder(NULL),soundStreamId(0),streamTime(0),paused(0)
 {
-	sem_init(&mutex,0,1);
+	amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
 }
 
 NetStream::~NetStream()

@@ -32,8 +32,8 @@ TLSDATA lightspark::IThreadJob* thisJob=NULL;
 ThreadPool::ThreadPool(SystemState* s):stopFlag(false)
 {
 	m_sys=s;
-	sem_init(&mutex,0,1);
-	sem_init(&num_jobs,0,0);
+	amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
+	amp_semaphore_create(&num_jobs,AMP_DEFAULT_ALLOCATOR,0);
 	for(int i=0;i<NUM_THREADS;i++)
 	{
 		curJobs[i]=NULL;

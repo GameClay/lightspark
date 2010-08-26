@@ -81,8 +81,8 @@ RootMovieClip::RootMovieClip(LoaderInfo* li, bool isSys):initialized(false),pars
 	toBind(false),mutexChildrenClips("mutexChildrenClips")
 {
 	root=this;
-	sem_init(&mutex,0,1);
-	sem_init(&new_frame,0,0);
+	amp_semaphore_create(&mutex,AMP_DEFAULT_ALLOCATOR,1);
+	amp_semaphore_create(&new_frame,AMP_DEFAULT_ALLOCATOR,0);
 	loaderInfo=li;
 	//Reset framesLoaded, as there are still not available
 	framesLoaded=0;
@@ -155,7 +155,7 @@ SystemState::SystemState(ParseThread* p):RootMovieClip(NULL,true),parseThread(p)
 	cookiesFileName[0]=0;
 	//Create the thread pool
 	sys=this;
-	sem_init(&terminated,0,0);
+	amp_semaphore_create(&terminated,AMP_DEFAULT_ALLOCATOR,0);
 
 	//Get starting time
 	if(parseThread) //ParseThread may be null in tightspark
@@ -782,7 +782,7 @@ void ThreadProfile::plot(uint32_t maxTime, FTFont* font)
 ParseThread::ParseThread(RootMovieClip* r,istream& in):f(in),isEnded(false),root(NULL),version(0),useAVM2(false)
 {
 	root=r;
-	sem_init(&ended,0,0);
+	amp_semaphore_create(&ended,AMP_DEFAULT_ALLOCATOR,0);
 }
 
 ParseThread::~ParseThread()

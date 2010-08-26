@@ -28,7 +28,7 @@ using namespace lightspark;
 //NOTE: thread jobs can be run only once
 IThreadJob::IThreadJob():destroyMe(false),executing(false),aborting(false)
 {
-	sem_init(&terminated, 0, 0);
+	amp_semaphore_create(&terminated, AMP_DEFAULT_ALLOCATOR, 0);
 }
 
 IThreadJob::~IThreadJob()
@@ -64,7 +64,7 @@ void IThreadJob::stop()
 
 Mutex::Mutex(const char* n):name(n),foundBusy(0)
 {
-	sem_init(&sem,0,1);
+	amp_semaphore_create(&sem,AMP_DEFAULT_ALLOCATOR,1);
 }
 
 Mutex::~Mutex()
@@ -96,7 +96,7 @@ void Mutex::unlock()
 
 Semaphore::Semaphore(uint32_t init)//:blocked(0),maxBlocked(max)
 {
-	sem_init(&sem,0,init);
+	amp_semaphore_create(&sem,AMP_DEFAULT_ALLOCATOR,init);
 }
 
 Semaphore::~Semaphore()
