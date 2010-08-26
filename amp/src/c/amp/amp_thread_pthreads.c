@@ -215,6 +215,6 @@ int amp_thread_yield(void)
 
 void amp_thread_raw_exit(void)
 {
-	pthread_exit(NULL);
+    pthread_exit(NULL);
 }
 

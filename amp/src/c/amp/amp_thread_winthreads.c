@@ -267,6 +267,6 @@ int amp_thread_yield(void)
 
 void amp_thread_raw_exit(void)
 {
-	_endthreadex(0);
+    _endthreadex(0);
 }
 
