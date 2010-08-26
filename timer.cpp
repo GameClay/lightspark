@@ -150,7 +150,7 @@ void TimerThread::timer_worker(TimerThread* th)
 		//Wait for the absolute time, or a newEvent signal
 		timespec tmpt=msecsToTimespec(timing);
 		amp_semaphore_signal(th->mutex);
-		int ret=sem_timedwait(&th->newEvent, &tmpt);
+		int ret=0;//sem_timedwait(&th->newEvent, &tmpt);// HACK DO NOT PUSH
 		if(th->stopped)
 			amp_thread_exit(0);
 
