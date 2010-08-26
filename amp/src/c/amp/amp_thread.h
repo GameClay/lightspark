@@ -185,7 +185,7 @@ extern "C" {
 	 *
 	 * TODO: @todo Decide on way to retrieve thread exit code
 	 */
-	 void amp_thread_exit(uintptr_t exit_value);
+	 void amp_thread_exit(void);
     
     
 
