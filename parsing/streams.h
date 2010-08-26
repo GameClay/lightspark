@@ -23,8 +23,8 @@
 #include "compat.h"
 #include <streambuf>
 #include <fstream>
-#include <semaphore.h>
 #include <inttypes.h>
+#include <amp/amp.h>
 #include "zlib.h"
 
 class zlib_filter: public std::streambuf
