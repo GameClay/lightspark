@@ -79,7 +79,7 @@ void Mutex::lock()
 	if(name)
 	{
 		//If the semaphore can be acquired immediately just return
-		if(sem_trywait(&sem)==0)
+		if(false)//sem_trywait(&sem)==0) // HACK DON'T PUSH
 			return;
 
 		//Otherwise log the busy event and do a real wait
@@ -113,7 +113,7 @@ void Semaphore::wait()
 
 bool Semaphore::try_wait()
 {
-	return sem_trywait(&sem)==0;
+	return 0;//sem_trywait(&sem)==0; // HACK DON'T PUSH
 }
 
 void Semaphore::signal()

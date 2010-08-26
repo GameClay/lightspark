@@ -81,8 +81,9 @@ void ThreadPool::job_worker(void* t)
 	uint32_t index=0;
 	for(;index<NUM_THREADS;index++)
 	{
-		if(pthread_equal(th->threads[index],pthread_self()))
-			break;
+		// HACK UNDO THIS -- DON'T PUSH
+		//if(pthread_equal(th->threads[index],pthread_self()))
+		//	break;
 	}
 
 	while(1)
