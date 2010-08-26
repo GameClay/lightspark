@@ -38,11 +38,11 @@ class SystemState;
 class ThreadPool
 {
 private:
-	sem_t mutex;
-	pthread_t threads[NUM_THREADS];
+	amp_semaphore_t mutex;
+	amp_thread_t threads[NUM_THREADS];
 	IThreadJob* curJobs[NUM_THREADS];
 	std::deque<IThreadJob*> jobs;
-	sem_t num_jobs;
+	amp_semaphore_t num_jobs;
 	static void* job_worker(void*);
 	SystemState* m_sys;
 	bool stopFlag;

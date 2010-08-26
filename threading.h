@@ -34,7 +34,7 @@ class Mutex
 {
 friend class Locker;
 private:
-	sem_t sem;
+	amp_semaphore_t sem;
 	const char* name;
 	uint32_t foundBusy;
 public:
@@ -49,7 +49,7 @@ class IThreadJob
 friend class ThreadPool;
 friend class Condition;
 private:
-	sem_t terminated;
+	amp_semaphore_t terminated;
 protected:
 	bool destroyMe;
 	bool executing;
@@ -66,7 +66,7 @@ public:
 class Semaphore
 {
 private:
-	sem_t sem;
+	amp_semaphore_t sem;
 	//TODO: use atomic incs and decs
 	//uint32_t blocked;
 	//uint32_t maxBlocked;

@@ -277,7 +277,7 @@ public:
 class SynchronizationEvent: public Event
 {
 private:
-	sem_t s;
+	amp_semaphore_t s;
 public:
 	SynchronizationEvent():Event("SynchronizationEvent"){sem_init(&s,0,0);}
 	SynchronizationEvent(const tiny_string& _s):Event(_s){sem_init(&s,0,0);}

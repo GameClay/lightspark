@@ -436,7 +436,7 @@ friend class ABCContext;
 friend class method_info;
 private:
 	SystemState* m_sys;
-	pthread_t t;
+	amp_thread_t t;
 	bool terminated;
 
 	llvm::Module* module;
@@ -591,8 +591,8 @@ private:
 	static typed_opcode_handler opcode_table_bool_t[];
 
 	//Synchronization
-	sem_t event_queue_mutex;
-	sem_t sem_event_count;
+	amp_semaphore_t event_queue_mutex;
+	amp_semaphore_t sem_event_count;
 
 	//Event handling
 	bool shuttingdown;
@@ -644,7 +644,7 @@ private:
 	UI32 Flags;
 	STRING Name;
 	ABCContext* context;
-	pthread_t thread;
+	amp_thread_t thread;
 public:
 	DoABCTag(RECORDHEADER h, std::istream& in);
 	~DoABCTag();

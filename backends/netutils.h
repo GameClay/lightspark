@@ -57,7 +57,7 @@ public:
 class DLL_PUBLIC Downloader: public std::streambuf
 {
 private:
-	sem_t mutex;
+	amp_semaphore_t mutex;
 	uint8_t* buffer;
 	//Whether to allow reallocating of the buffer to grow it
 	bool allowBufferRealloc;
@@ -67,9 +67,9 @@ private:
 	virtual int_type underflow();
 	virtual pos_type seekoff(off_type, std::ios_base::seekdir, std::ios_base::openmode);
 	virtual pos_type seekpos(pos_type, std::ios_base::openmode);
-	sem_t available;
+	amp_semaphore_t available;
 protected:
-	sem_t terminated;
+	amp_semaphore_t terminated;
 	void setFailed();
 	bool failed;
 public:

@@ -37,7 +37,7 @@ class InputThread
 {
 private:
 	SystemState* m_sys;
-	pthread_t t;
+	amp_thread_t t;
 	bool terminated;
 	bool threaded;
 	static void* sdl_worker(InputThread*);

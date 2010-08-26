@@ -48,7 +48,7 @@ public:
 class Video: public DisplayObject
 {
 private:
-	sem_t mutex;
+	amp_semaphore_t mutex;
 	uint32_t width, height, videoWidth, videoHeight;
 	bool initialized;
 	TextureBuffer videoTexture;

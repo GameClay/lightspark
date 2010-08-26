@@ -77,13 +77,13 @@ class RootMovieClip: public MovieClip, public ITickJob
 {
 friend class ParseThread;
 protected:
-	sem_t mutex;
+	amp_semaphore_t mutex;
 	bool initialized;
 	tiny_string origin;
 	void tick();
 private:
 	//Semaphore to wait for new frames to be available
-	sem_t new_frame;
+	amp_semaphore_t new_frame;
 	bool parsingIsFailed;
 	RGB Background;
 	std::list < DictionaryTag* > dictionary;
@@ -173,7 +173,7 @@ private:
 	ThreadPool* threadPool;
 	TimerThread* timerThread;
 	ParseThread* parseThread;
-	sem_t terminated;
+	amp_semaphore_t terminated;
 	float renderRate;
 	bool error;
 	bool shutdown;
@@ -295,7 +295,7 @@ class ParseThread: public IThreadJob
 {
 private:
 	std::istream& f;
-	sem_t ended;
+	amp_semaphore_t ended;
 	bool isEnded;
 	void execute();
 	void threadAbort();

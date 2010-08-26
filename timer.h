@@ -56,9 +56,9 @@ private:
 		uint64_t timing;
 		uint32_t tickTime;
 	};
-	sem_t mutex;
-	sem_t newEvent;
-	pthread_t t;
+	amp_semaphore_t mutex;
+	amp_semaphore_t newEvent;
+	amp_thread_t t;
 	std::list<TimingEvent*> pendingEvents;
 	SystemState* m_sys;
 	ITickJob* volatile currentJob;

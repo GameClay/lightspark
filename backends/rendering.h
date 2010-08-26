@@ -29,7 +29,7 @@ class RenderThread: public ITickJob
 {
 private:
 	SystemState* m_sys;
-	pthread_t t;
+	amp_thread_t t;
 	bool terminated;
 	static void* sdl_worker(RenderThread*);
 #ifdef COMPILE_PLUGIN
@@ -39,8 +39,8 @@ private:
 	void commonGLInit(int width, int height);
 	void commonGLResize(int width, int height);
 	void commonGLDeinit();
-	sem_t render;
-	sem_t inputDone;
+	amp_semaphore_t render;
+	amp_semaphore_t inputDone;
 	bool inputNeeded;
 	bool inputDisabled;
 	std::string fontPath;

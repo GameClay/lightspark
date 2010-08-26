@@ -59,9 +59,9 @@ private:
 	char* buffer;
 	int head;
 	int tail;
-	sem_t mutex;
-	sem_t notfull;
-	sem_t notempty;
+	amp_semaphore_t mutex;
+	amp_semaphore_t notfull;
+	amp_semaphore_t notempty;
 	bool wait_notfull;
 	bool wait_notempty;
 	const int buf_size;
