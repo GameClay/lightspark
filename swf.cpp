@@ -94,8 +94,8 @@ RootMovieClip::RootMovieClip(LoaderInfo* li, bool isSys):initialized(false),pars
 
 RootMovieClip::~RootMovieClip()
 {
-	sem_destroy(&mutex);
-	sem_destroy(&new_frame);
+	amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&new_frame,AMP_DEFAULT_ALLOCATOR);
 }
 
 void RootMovieClip::parsingFailed()
@@ -359,7 +359,7 @@ SystemState::~SystemState()
 	renderThread=NULL;
 	delete inputThread;
 	inputThread=NULL;
-	sem_destroy(&terminated);
+	amp_semaphore_destroy(&terminated,AMP_DEFAULT_ALLOCATOR);
 }
 
 bool SystemState::isOnError() const
@@ -787,7 +787,7 @@ ParseThread::ParseThread(RootMovieClip* r,istream& in):f(in),isEnded(false),root
 
 ParseThread::~ParseThread()
 {
-	sem_destroy(&ended);
+	amp_semaphore_destroy(&ended,AMP_DEFAULT_ALLOCATOR);
 }
 
 void ParseThread::execute()

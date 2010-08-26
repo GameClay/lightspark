@@ -63,9 +63,9 @@ Downloader::~Downloader()
 	{
 		free(buffer);
 	}
-	sem_destroy(&available);
-	sem_destroy(&mutex);
-	sem_destroy(&terminated);
+	amp_semaphore_destroy(&available,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&terminated,AMP_DEFAULT_ALLOCATOR);
 }
 
 Downloader::Downloader():buffer(NULL),allowBufferRealloc(false),len(0),tail(0),waiting(false),failed(false)

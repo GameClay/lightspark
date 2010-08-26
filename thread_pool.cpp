@@ -68,8 +68,8 @@ ThreadPool::~ThreadPool()
 			LOG(LOG_ERROR,"pthread_join failed in ~ThreadPool");
 	}
 
-	sem_destroy(&num_jobs);
-	sem_destroy(&mutex);
+	amp_semaphore_destroy(&num_jobs,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
 }
 
 void* ThreadPool::job_worker(void* t)

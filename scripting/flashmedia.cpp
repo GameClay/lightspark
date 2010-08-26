@@ -74,7 +74,7 @@ Video::~Video()
 	if(rt)
 	{
 		rt->releaseResourceMutex();
-		sem_destroy(&mutex);
+		amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
 	}
 }
 

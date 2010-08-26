@@ -99,8 +99,8 @@ RenderThread::RenderThread(SystemState* s,ENGINE e,void* params):m_sys(s),termin
 RenderThread::~RenderThread()
 {
 	wait();
-	sem_destroy(&render);
-	sem_destroy(&inputDone);
+	amp_semaphore_destroy(&render,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&inputDone,AMP_DEFAULT_ALLOCATOR);
 	delete[] interactive_buffer;
 	LOG(LOG_NO_INFO,"~RenderThread this=" << this);
 }

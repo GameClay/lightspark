@@ -970,8 +970,8 @@ void ABCVm::shutdown()
 
 ABCVm::~ABCVm()
 {
-	sem_destroy(&sem_event_count);
-	sem_destroy(&event_queue_mutex);
+	amp_semaphore_destroy(&sem_event_count,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&event_queue_mutex,AMP_DEFAULT_ALLOCATOR);
 	delete int_manager;
 	delete number_manager;
 }

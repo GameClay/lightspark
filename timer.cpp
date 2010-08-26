@@ -84,8 +84,8 @@ TimerThread::~TimerThread()
 	list<TimingEvent*>::iterator it=pendingEvents.begin();
 	for(;it!=pendingEvents.end();it++)
 		delete *it;
-	sem_destroy(&mutex);
-	sem_destroy(&newEvent);
+	amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&newEvent,AMP_DEFAULT_ALLOCATOR);
 }
 
 void TimerThread::insertNewEvent_nolock(TimingEvent* e)

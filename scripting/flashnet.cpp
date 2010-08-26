@@ -408,7 +408,7 @@ NetStream::~NetStream()
 		sys->removeJob(this);
 	delete videoDecoder; 
 	delete audioDecoder; 
-	sem_destroy(&mutex);
+	amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
 }
 
 void NetStream::sinit(Class_base* c)

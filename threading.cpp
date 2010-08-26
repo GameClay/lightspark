@@ -35,7 +35,7 @@ IThreadJob::~IThreadJob()
 {
 	if(executing)
 		amp_semaphore_wait(terminated);
-	sem_destroy(&terminated);
+	amp_semaphore_destroy(&terminated,AMP_DEFAULT_ALLOCATOR);
 }
 
 void IThreadJob::run()
@@ -71,7 +71,7 @@ Mutex::~Mutex()
 {
 	if(name)
 		LOG(LOG_TRACE,"Mutex " << name << " waited " << foundBusy << " times");
-	sem_destroy(&sem);
+	amp_semaphore_destroy(&sem,AMP_DEFAULT_ALLOCATOR);
 }
 
 void Mutex::lock()
@@ -103,7 +103,7 @@ Semaphore::~Semaphore()
 {
 	//On destrucion unblocks the blocked thread
 	signal();
-	sem_destroy(&sem);
+	amp_semaphore_destroy(&sem,AMP_DEFAULT_ALLOCATOR);
 }
 
 void Semaphore::wait()

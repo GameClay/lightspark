@@ -36,7 +36,7 @@ VirtualMachine::VirtualMachine()
 
 VirtualMachine::~VirtualMachine()
 {
-	sem_destroy(&mutex);
+	amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
 }
 
 void VirtualMachine::setConstantPool(vector<STRING>& p)

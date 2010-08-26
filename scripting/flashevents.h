@@ -282,7 +282,7 @@ public:
 	SynchronizationEvent():Event("SynchronizationEvent"){amp_semaphore_create(&s,AMP_DEFAULT_ALLOCATOR,0);}
 	SynchronizationEvent(const tiny_string& _s):Event(_s){amp_semaphore_create(&s,AMP_DEFAULT_ALLOCATOR,0);}
 	static void sinit(Class_base*);
-	~SynchronizationEvent(){sem_destroy(&s);}
+	~SynchronizationEvent(){amp_semaphore_destroy(&s,AMP_DEFAULT_ALLOCATOR);}
 	EVENT_TYPE getEventType() { return SYNC; }
 	void sync()
 	{

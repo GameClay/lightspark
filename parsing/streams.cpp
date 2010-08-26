@@ -37,9 +37,9 @@ sync_stream::sync_stream():head(0),tail(0),wait_notfull(false),wait_notempty(fal
 
 sync_stream::~sync_stream()
 {
-	sem_destroy(&mutex);
-	sem_destroy(&notfull);
-	sem_destroy(&notempty);
+	amp_semaphore_destroy(&mutex,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&notfull,AMP_DEFAULT_ALLOCATOR);
+	amp_semaphore_destroy(&notempty,AMP_DEFAULT_ALLOCATOR);
 }
 
 void sync_stream::destroy()
